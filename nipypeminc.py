@@ -2814,7 +2814,7 @@ class XfmInvert(CommandLine):
             if isdefined(output_file):
                 return os.path.abspath(output_file)
             else:
-                return aggregate_filename(self.inputs.input_files, 'xfminvert_output') + '.xfm'
+                return aggregate_filename([self.inputs.input_file], 'xfminvert_output') + '.xfm'
         else:
             raise NotImplemented
 
