@@ -2886,9 +2886,12 @@ class BigAverage(CommandLine):
         else:
             raise NotImplemented
 
+    def _gen_outfilename(self):
+        return self._gen_filename('output_file')
+
     def _list_outputs(self):
         outputs = self.output_spec().get()
-        outputs['output_file'] = os.path.abspath(self._gen_outfilename('output_file'))
-        outputs['sd_file']     = os.path.abspath(self._gen_outfilename('sd_file'))
+        outputs['output_file'] = os.path.abspath(self._gen_filename('output_file'))
+        outputs['sd_file']     = os.path.abspath(self._gen_filename('sd_file'))
         return outputs
 
