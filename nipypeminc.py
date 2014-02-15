@@ -2672,7 +2672,7 @@ class NlpFitInputSpec(CommandLineInputSpec):
 
     config_file = File(
                     desc='File containing the fitting configuration use.',
-                    argstr='%s',
+                    argstr='-config_file %s',
                     exists=True)
 
     init_xfm = File(
