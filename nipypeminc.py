@@ -2715,9 +2715,9 @@ class NlpFit(CommandLine):
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
-        outputs['output_mnc'] = os.path.abspath(self._gen_filename('output_mnc'))
         # FIXME see above.
-        # outputs['output_xfm'] = os.path.abspath(self._gen_filename('output_xfm'))
+        # outputs['output_mnc'] = os.path.abspath(self._gen_filename('output_mnc'))
+        outputs['output_xfm'] = os.path.abspath(self._gen_filename('output_xfm'))
         return outputs
 
 class XfmAvgInputSpec(CommandLineInputSpec):
