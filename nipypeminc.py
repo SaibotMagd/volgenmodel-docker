@@ -2662,11 +2662,13 @@ class NlpFitInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-2,)
 
-    output_file  = File(
-                    desc='output file',
+    output_xfm   = File(
+                    desc='output xfm file',
                     genfile=True,
                     argstr='%s',
                     position=-1,)
+
+    # FIXME outout_mnc?
 
     config_file = File(
                     desc='File containing the fitting configuration use.',
