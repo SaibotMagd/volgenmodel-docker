@@ -102,6 +102,8 @@ volcentre = pe.MapNode(interface=Volcentre(zero_dircos=True, verbose=True),
                        iterfield=['input_file'])
 
 def _calc_threshold_blur_preprocess(input_file):
+    import sys
+    sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
     from volgenmodel import get_step_sizes
     (xstep, ystep, zstep) = get_step_sizes(input_file)
     return abs(xstep + ystep + zstep)
