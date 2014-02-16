@@ -101,30 +101,34 @@ volcentre = pe.MapNode(interface=Volcentre(zero_dircos=True, verbose=True),
                        name='volcentre',
                        iterfield=['input_file'])
 
+def _calc_threshold_blur_preprocess(input_file):
+    from volgenmodel import get_step_sizes
+    (xstep, ystep, zstep) = get_step_sizes(input_file)
+    return abs(xstep + ystep + zstep)
+
+calc_threshold_blur_preprocess = utils.Function(
+                                        input_names=['input_file'],
+                                        output_names=['threshold_blur'],
+                                        function=_calc_threshold_blur_preprocess)
+
 # Preprocessing: norm step.
 if NORMALISE:
-    # FIXME this is not complete, need to also get the step size for each file!!!!!
-    """
-         # get step sizes
-         chomp($step_x = `mincinfo -attvalue xspace:step $infiles[$f]`);
-         chomp($step_y = `mincinfo -attvalue yspace:step $infiles[$f]`);
-         chomp($step_z = `mincinfo -attvalue zspace:step $infiles[$f]`);
-
-         printf STDOUT "   | $nrmfile - normalising\n";
-         &do_cmd_batch("NRM$$-$f", "CEN$$-$f",
-                       'mincnorm', '-clobber',
-                       '-cutoff', $opt{'model_norm_thresh'},
-                       '-threshold',
-                       '-threshold_perc', $opt{'model_norm_thresh'},
-                       '-threshold_blur', abs($step_x + $step_y + $step_z),
-                       $resfiles[$f], $nrmfile);
-    """
-
-    norm = pe.MapNode(interface=Norm(cutoff=NORM_CUTOFF,
-                                     threshold_perc=NORM_THRESHOLD_PERC,
-                                     threshold_blur=NORM_THRESHOLD_BLUR),
+    norm = pe.MapNode(interface=Norm(cutoff=MODEL_NORM_THRESH,
+                                     threshold_perc=MODEL_NORM_THRESH),
                       name='norm',
-                      iterfield=['input_file'])
+                      iterfield=['input_file', 'threshold_blur']) # FIXME double-check this
+
+    preprocess_thresholds = pe.MapNode(interface=calc_threshold_blur_preprocess,
+                                       name='calc_threshold_blur_preprocess',
+                                       iterfield=['input_file'])
+
+    # Send output of volcentre to the Function interface that calculates the threshold for blurring on each file.
+    workflow.connect(volcentre, 'output_file', preprocess_thresholds, 'input_file')
+
+    # Send blur thresholds to the normalisation step.
+    workflow.connect(preprocess_thresholds, 'threshold_blur', norm, 'threshold_blur')
+
+    # Note: below we actually make the connection from volcentre to the norm step for the input files.
 else:
     norm = pe.MapNode(interface=utils.IdentityInterface(fields=['input_file']),
                       name='identity_norm',
@@ -357,6 +361,9 @@ for snum in range(0, len(FIT_STAGES)):
 
         # FIXME why doesn't this work???
         workflow.connect(iso_fit_mask_math , 'output_file', nlpfit_tmp, 'source_mask')
+
+        # FIXME debugging...
+        workflow.connect(iso_fit_mask_math , 'output_file', datasink, 'iso_fit_mask_math_output_stage_%02d' % snum)
 
         workflow.connect(iso, 'output_file', nlpfit_tmp, 'target') # iteration; FIXME Is this coming from the right source!?
         workflow.connect(iso_tmp, 'output_file', nlpfit_tmp, 'source')

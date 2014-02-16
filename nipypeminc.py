@@ -118,6 +118,9 @@ class Info(object):
 # FIXME Check that *all* genfile outputs end up in the cwd, not as a mash of the 
 # input file.
 
+# FIXME check that ALL output_file things have genfile=True.
+
+
 def aggregate_filename(files, new_suffix):
     """
     Try to work out a sensible name given a set of files that have
@@ -1281,6 +1284,7 @@ class PikInputSpec(CommandLineInputSpec):
     output_file = File(
                     desc='output file',
                     argstr='%s',
+                    genfile=True,
                     position=-1)
 
     clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
@@ -1356,7 +1360,20 @@ class Pik(CommandLine):
     output_spec = PikOutputSpec
     _cmd = 'mincpik'
 
-    def _gen_outfilename(self, name):
+    def _format_arg(self, name, spec, value):
+        if name == 'title':
+            if isinstance(value, bool) and value:
+                return '--title'
+            elif isinstance(value, str):
+                return '--title --title_text %s' % (value,)
+            else:
+                raise ValueError, 'Unknown value for "title" argument: ' + str(value)
+        return super(Pik, self)._format_arg(name, spec, value)
+
+    def _gen_outfilename(self):
+        return self._gen_filename('output_file')
+
+    def _gen_filename(self, name):
         if name == 'output_file':
             output_file = self.inputs.output_file
 
@@ -1378,30 +1395,8 @@ class Pik(CommandLine):
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
-        outputs['output_file'] = os.path.abspath(self._gen_outfilename('output_file'))
+        outputs['output_file'] = os.path.abspath(self._gen_filename('output_file'))
         return outputs
-
-    def _format_arg(self, name, spec, value):
-        if name == 'title':
-            if isinstance(value, bool) and value:
-                return '--title'
-            elif isinstance(value, str):
-                return '--title --title_text %s' % (value,)
-            else:
-                raise ValueError, 'Unknown value for "title" argument: ' + str(value)
-        return super(Pik, self)._format_arg(name, spec, value)
-
-    @property
-    def cmdline(self):
-        output_file = self.inputs.output_file
-
-        if isdefined(output_file):
-            return super(Pik, self).cmdline
-        else:
-            # FIXME this seems like a bit of a hack. Can we force output_file
-            # to show up in cmdline by default, even if it isn't specified in
-            # the instantiation of Pik?
-            return '%s %s' % (super(Pik, self).cmdline, self._gen_outfilename('output_file'))
 
 class BlurInputSpec(CommandLineInputSpec):
     """ FIXME not implemented
@@ -1568,6 +1563,7 @@ class MathInputSpec(CommandLineInputSpec):
     output_file = File(
                     desc='output file',
                     argstr='%s',
+                    genfile=True,
                     position=-1)
 
     filelist = traits.File(desc='Specify the name of a file containing input file names.', argstr='-filelist %s', exists=True, mandatory=True, xor=_xor_input_files)
@@ -1741,6 +1737,8 @@ class Math(StdOutCommandLine):
     _cmd = 'mincmath'
 
     def _format_arg(self, name, spec, value):
+        assert value is not None
+
         if name in self.input_spec.bool_or_const_traits:
             # t is unused, what was I trying to do with it?
             # t = self.inputs.__getattribute__(name)
@@ -1798,25 +1796,24 @@ class Math(StdOutCommandLine):
 
         return super(Math, self)._parse_inputs()
 
+    def _gen_filename(self, name):
+        if name == 'output_file':
+            output_file = self.inputs.output_file
+
+            if isdefined(output_file):
+                return os.path.abspath(output_file)
+            else:
+                return aggregate_filename(self.inputs.input_files, 'mincmath_output') + '.mnc'
+        else:
+            raise NotImplemented
+
     def _gen_outfilename(self):
-        output_file = self.inputs.output_file
+        return self._gen_filename('output_file')
 
-        if isdefined(output_file):
-            return os.path.abspath(output_file)
-        else:
-            return aggregate_filename(self.inputs.input_files, 'mincmath_output')
-
-    @property
-    def cmdline(self):
-        output_file = self.inputs.output_file
-
-        if isdefined(output_file):
-            return super(Math, self).cmdline
-        else:
-            # FIXME this seems like a bit of a hack. Can we force output_file
-            # to show up in cmdline by default, even if it isn't specified in
-            # the instantiation of Math?
-            return '%s %s' % (super(Math, self).cmdline, self._gen_outfilename())
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['output_file'] = os.path.abspath(self._gen_outfilename())
+        return outputs
 
 class ResampleInputSpec(CommandLineInputSpec):
     """

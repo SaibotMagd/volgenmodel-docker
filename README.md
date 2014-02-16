@@ -8,7 +8,6 @@ Things still left to do:
 
 * Many FIXMEs in ```volgenmodel.py```.
 * Symmetric averaging (end of stage).
-* Add threshold blur parameters in preprocessing stage.
 
 # Install
 
