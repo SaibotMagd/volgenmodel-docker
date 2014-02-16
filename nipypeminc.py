@@ -115,6 +115,9 @@ class Info(object):
 
 # FIXME Range() produces an Int, not suitable for percentage ranges. Check all of these.
 
+# FIXME Check that *all* genfile outputs end up in the cwd, not as a mash of the 
+# input file.
+
 def aggregate_filename(files, new_suffix):
     """
     Try to work out a sensible name given a set of files that have
@@ -1513,7 +1516,11 @@ class Blur(StdOutCommandLine):
         if isdefined(output_file_base):
             return output_file_base
         else:
-            return os.path.splitext(self.inputs.input_file)[0] + '_bluroutput'
+            base_file_name          = os.path.split(self.inputs.input_file)[1]                         # e.g. 'foo.mnc'
+            base_file_name_no_ext   = os.path.splitext(base_file_name)[0]                              # e.g. 'foo'
+            output_base             = os.path.join(os.getcwd(), base_file_name_no_ext + '_bluroutput') # e.g. '/tmp/blah/foo_bluroutput'
+            # return os.path.splitext(self.inputs.input_file)[0] + '_bluroutput'
+            return output_base
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
@@ -2673,16 +2680,19 @@ class NlpFitInputSpec(CommandLineInputSpec):
     config_file = File(
                     desc='File containing the fitting configuration use.',
                     argstr='-config_file %s',
+                    mandatory=True, # FIXME debugging
                     exists=True)
 
     init_xfm = File(
                     desc='Initial transformation (default identity).',
                     argstr='-init_xfm %s',
+                    mandatory=True, # FIXME debugging
                     exists=True)
 
     source_mask = File(
                     desc='Source mask to use during fitting.',
                     argstr='-source_mask %s',
+                    mandatory=True, # FIXME Just for debugging...
                     exists=True)
 
     verbose = traits.Bool(desc='Print out log messages. Default: False.', argstr='-verbose')

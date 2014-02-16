@@ -354,6 +354,8 @@ for snum in range(0, len(FIT_STAGES)):
         workflow.connect(datasource_fit_confs[snum], 'outfiles', nlpfit_tmp, 'config_file') # this is a single config file
 
         workflow.connect(xfm_concat_tmp,     'output_file', nlpfit_tmp, 'init_xfm')
+
+        # FIXME why doesn't this work???
         workflow.connect(iso_fit_mask_math , 'output_file', nlpfit_tmp, 'source_mask')
 
         workflow.connect(iso, 'output_file', nlpfit_tmp, 'target') # iteration; FIXME Is this coming from the right source!?
