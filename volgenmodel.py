@@ -173,7 +173,6 @@ initial_model = pe.Node(interface=Blur(fwhm3d=(abs(xstep*4), abs(ystep*4), abs(z
 
 
 # Identity transformation.
-# FIXME link in input field:    '-like', $cmodel,
 identity_gennlxfm = pe.Node(interface=Gennlxfm(step=CONF[0]['step']),
                             name='identity_gennlxfm')
 
@@ -210,7 +209,6 @@ workflow.connect(identity_gennlxfm, 'output_file',  datasink,   'final_identity_
 
 # Construct the workflow for each stage.
 
-# FIXME we need to store these - not sure what the final output actually is.
 stage_models = [None] * len(FIT_STAGES)
 
 # At some point we need the last linear stage's xfm outputs.
@@ -314,7 +312,7 @@ for snum in range(0, len(FIT_STAGES)):
 
     iso_fit_mask_math = pe.Node(interface=Math(test_gt=0.1),
                                 name='iso_fit_mask_math_stage_%02d' % snum) # ==> $isomodel_base.fit-msk.mnc
-    workflow.connect(iso_fit_mask_blur, 'output_file', iso_fit_mask_math, 'input_files') # FIXME does Nipype pass a single file as a list?
+    workflow.connect(iso_fit_mask_blur, 'output_file', iso_fit_mask_math, 'input_files')
 
     # Register each file in the input series.
     if end_stage == 'lin':
@@ -327,7 +325,7 @@ for snum in range(0, len(FIT_STAGES)):
                        iterfield=['target']) # ==> $modxfm[$f]
 
         if snum == lastlin:
-            last_linear_stage_xfm = registers_tmp # FIXME use this!
+            last_linear_stage_xfm = registers_tmp
 
         # The single iso model is the source.
         workflow.connect(iso_tmp, 'output_file', registers_tmp, 'source')
@@ -361,13 +359,11 @@ for snum in range(0, len(FIT_STAGES)):
 
         workflow.connect(xfm_concat_tmp,     'output_file', nlpfit_tmp, 'init_xfm')
 
-        # FIXME why doesn't this work???
         workflow.connect(iso_fit_mask_math , 'output_file', nlpfit_tmp, 'source_mask')
 
-        # FIXME debugging...
         workflow.connect(iso_fit_mask_math , 'output_file', datasink, 'iso_fit_mask_math_output_stage_%02d' % snum)
 
-        workflow.connect(iso, 'output_file', nlpfit_tmp, 'target') # iteration; FIXME Is this coming from the right source!?
+        workflow.connect(iso, 'output_file', nlpfit_tmp, 'target')
         workflow.connect(iso_tmp, 'output_file', nlpfit_tmp, 'source')
 
     # Average xfms.
@@ -375,12 +371,12 @@ for snum in range(0, len(FIT_STAGES)):
         mod_xfm = registers_tmp
         xfm_avg_tmp = pe.Node(interface=XfmAvg(ignore_nonlinear=True),
                                                name='xfm_avg_stage_%02d' % snum)
-        workflow.connect(mod_xfm, 'output_xfm', xfm_avg_tmp, 'input_files') # FIXME does Nipype pass a single file as a list?
+        workflow.connect(mod_xfm, 'output_xfm', xfm_avg_tmp, 'input_files')
     else:
         mod_xfm = nlpfit_tmp
         xfm_avg_tmp = pe.Node(interface=XfmAvg(ignore_linear=True),
                                                name='xfm_avg_stage_%02d' % snum)
-        workflow.connect(mod_xfm, 'output_xfm', xfm_avg_tmp, 'input_files') # FIXME does Nipype pass a single file as a list?
+        workflow.connect(mod_xfm, 'output_xfm', xfm_avg_tmp, 'input_files')
 
     # Resample each file in the input series.
 
@@ -451,6 +447,8 @@ for snum in range(0, len(FIT_STAGES)):
     # FIXME Change this to the actual final model blah, may need symmetric stuff applied.
     stage_models[snum] = big_average
 
+    # FIXME just testing stage 1 for the moment.
+    break
 
 # Run single-core:
 #
