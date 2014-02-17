@@ -1349,6 +1349,9 @@ class PikInputSpec(CommandLineInputSpec):
     vertical_triplanar_view   = traits.Bool(desc='Create a vertical triplanar view (Default).', argstr='--vertical',   xor=_xor_vertical_horizontal)
     horizontal_triplanar_view = traits.Bool(desc='Create a horizontal triplanar view.',         argstr='--horizontal', xor=_xor_vertical_horizontal)
 
+    hotmetal = traits.Bool(desc='Undocumented flag "-hotmetal".', argstr='-hotmetal')
+    lookup   = traits.Bool(desc='Undocumented flag "-lookup".',   argstr='-lookup')
+
 class PikOutputSpec(TraitedSpec):
     output_file = File(desc='output image', exists=True)
 
