@@ -1,7 +1,7 @@
+# STATUS: experimental, currently does not work.
 from nipype import config
 config.enable_debug_mode()
 
-import glob
 import os
 import os.path
 import subprocess
@@ -9,7 +9,7 @@ import nipype.pipeline.engine as pe
 import nipype.interfaces.io as nio
 import nipype.interfaces.utility as utils
 
-from nipypeminc import Volcentre, Norm, Volpad, Voliso, Math, Pik, Blur, Gennlxfm, XfmConcat, BestLinReg, NlpFit, XfmAvg, XfmInvert, Resample, BigAverage
+from nipypeminc import Volcentre, Norm, Volpad, Voliso, Math, Pik, Blur, Gennlxfm, XfmConcat, BestLinReg, NlpFit, XfmAvg, XfmInvert, Resample, BigAverage, Reshape, VolSymm
 
 def run_command(cmd):
     """
@@ -63,6 +63,9 @@ MODEL_NORM_THRESH = 0.1
 
 LINMETHOD = 'bestlinreg'
 
+SYMMETRIC = True
+SYMMETRIC_DIR = 'x'
+
 # fit.10-genmodel.conf:
 #
 # ICBM nlin conf
@@ -82,15 +85,6 @@ workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource')
 datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 datasource.inputs.template = 'sml*pre.mnc'
-
-# Glob for the first sml*pre.mnc file in the current directory.
-# FIXME Use Select from utils?
-sorted_files = sorted(glob.glob(os.path.join(os.path.abspath(FAST_EXAMPLE_BASE_DIR), 'sml*pre.mnc')))
-first_file_name     = sorted_files[0]
-first_file_template = os.path.split(sorted_files[0])[1]
-datasource_first_file = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_first_file')
-datasource_first_file.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
-datasource_first_file.inputs.template = first_file_template
 
 # Sink for all the results (the subdirectory volgenmodel_output).
 datasink = pe.Node(interface=nio.DataSink(), name="datasink")
@@ -112,6 +106,17 @@ calc_threshold_blur_preprocess = utils.Function(
                                         input_names=['input_file'],
                                         output_names=['threshold_blur'],
                                         function=_calc_threshold_blur_preprocess)
+def _calc_initial_model_fwhm3d(input_file):
+    import sys
+    sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
+    from volgenmodel import get_step_sizes
+    (xstep, ystep, zstep) = get_step_sizes(input_file)
+    return (abs(xstep*4), abs(ystep*4), abs(zstep*4))
+
+calc_initial_model_fwhm3d = utils.Function(
+                                        input_names=['input_file'],
+                                        output_names=['fwhm3d'],
+                                        function=_calc_initial_model_fwhm3d)
 
 # Preprocessing: norm step.
 if NORMALISE:
@@ -138,7 +143,7 @@ else:
 
 # Preprocessing: padding.
 if PAD_DISTANCE > 0:
-    pad = pe.MapNode(interface=Volpad(distance=PAD_DISTANCE, smooth=True, smooth_distance=PAD_SMOOTH_DISTANCE),
+    pad = pe.MapNode(interface=Volpad(distance=PAD_DISTANCE, smooth=True, smooth_distance=PAD_SMOOTH_DISTANCE/3),
                      name='volpad',
                      iterfield=['input_file'])
 else:
@@ -167,10 +172,8 @@ else:
                       iterfield=['input_file'])
 
 # Preprocessing: initial model from the "first" file.
-(xstep, ystep, zstep) = get_step_sizes(first_file_name)
-initial_model = pe.Node(interface=Blur(fwhm3d=(abs(xstep*4), abs(ystep*4), abs(zstep*4))),
-                        name='initial_model')
-
+initial_model = pe.Node(interface=Blur(), name='initial_model')
+init_model_fwhm3d = pe.Node(interface=calc_initial_model_fwhm3d, name='init_model_fwhm3d')
 
 # Identity transformation.
 identity_gennlxfm = pe.Node(interface=Gennlxfm(step=CONF[0]['step']),
@@ -186,11 +189,16 @@ lastlin = FIT_STAGES[::-1].index('lin') - len(FIT_STAGES) + 1
 # sml*pre.mnc => volcentre
 workflow.connect(datasource,            'outfiles', volcentre,     'input_file')
 
-# first file => initial model
-workflow.connect(datasource_first_file, 'outfiles', initial_model, 'input_file')
+# first file (after preprocessing) => initial model
+select_first_preprocessed = pe.Node(interface=utils.Select(index=[0]), name='select_first_preprocessed')
+workflow.connect(iso, 'output_file', select_first_preprocessed, 'inlist')
+workflow.connect(select_first_preprocessed, 'out', initial_model, 'input_file')
 
 # The initial model is used to construct the identity transformation.
 workflow.connect(initial_model, 'output_file', identity_gennlxfm, 'like')
+
+workflow.connect(select_first_preprocessed, 'out', init_model_fwhm3d, 'input_file')
+workflow.connect(init_model_fwhm3d, 'fwhm3d', initial_model, 'fwhm3d')
 
 # volcentre => norm => pad => iso => pik
 workflow.connect(volcentre,     'output_file',  norm,       'input_file')
@@ -227,6 +235,7 @@ for snum in range(0, len(FIT_STAGES)):
     else:
         print "---Non Linear fit---"
 
+        # FIXME should make this a Function interface so that it's explicit in the workflow graph?
         conf_fname = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit-stage-%02d.conf' % snum)  #   "$cworkdir/fit.conf";
         print 'Creating', conf_fname
 
@@ -350,7 +359,7 @@ for snum in range(0, len(FIT_STAGES)):
                                  name='xfm_concat_stage_%02d' % snum) # ==> $initcnctxfm
         workflow.connect(merge_xfm_tmp, 'out', xfm_concat_tmp, 'input_files')
 
-        nlpfit_tmp = pe.MapNode(interface=NlpFit(),
+        nlpfit_tmp = pe.MapNode(interface=NlpFit(verbose=True),
                                 name='nlpfit_tmp_stage_%02d' % snum,
                                 iterfield=['target']) # ==> modxfm[$f]
 
@@ -422,33 +431,69 @@ for snum in range(0, len(FIT_STAGES)):
 
     workflow.connect(resample, 'output_file', big_average, 'input_files')
 
-    # TODO
-    # &do_cmd_batch("cIAV$$-$snum_txt", "IAV$$-$snum_txt",
-    # 'mincpik', '-clobber',
-    # '-triplanar', '-horizontal',
-    # '-scale', 4, '-tilesize', 400,
-    # '-sagittal_offset', 10,
-    # $iavgfile, $iavgfilechk) if $opt{'check'};
-    # &do_cmd_batch("cIAV$$-$snum_txt", "IAV$$-$snum_txt",
-    # 'mincpik', '-clobber',
-    # '-triplanar', '-horizontal',
-    # '-scale', 4, '-tilesize', 400,
-    # '-lookup', '-hotmetal',
-    # '-sagittal_offset', 10,
-    # $istdfile, $istdfilechk) if $opt{'check'};
+    pik_iavgcheck = pe.MapNode(interface=Pik(triplanar=True,
+                                             horizontal_triplanar_view=True,
+                                             scale=4,
+                                             tile_size=400,
+                                             sagittal_offset=10),
+                               name='pik_iavgcheck_stage_%02d' % snum,
+                               iterfield=['input_file'])
 
-    # FIXME Various not done bits from the end of volgenmodel.
+    workflow.connect(big_average, 'output_file', pik_iavgcheck, 'input_file')
 
-    # FIXME Use output of big_average as the new model; for the moment just send it to the sink.
+    pik_istdfile = pe.MapNode(interface=Pik(triplanar=True,
+                                            horizontal_triplanar_view=True,
+                                            scale=4,
+                                            tile_size=400,
+                                            lookup='-hotmetal',
+                                            sagittal_offset=10),
+                              name='pik_istdfile_stage_%02d' % snum,
+                              iterfield=['input_file'])
 
+    workflow.connect(big_average, 'sd_file', pik_istdfile, 'input_file')
 
-    workflow.connect(big_average, 'output_file', datasink, 'big_average_stage_%02d' % snum)
+    # Symmetric averaging.
+    if SYMMETRIC:
+        # Convert double model to short.
 
-    # FIXME Change this to the actual final model blah, may need symmetric stuff applied.
-    stage_models[snum] = big_average
+        reshape_to_short = pe.Node(interface=Reshape(write_short=True),
+                                   name='reshape_to_short_stage_%02d' % snum) # => $symfile
 
-    # FIXME just testing stage 1 for the moment.
-    break
+        # Set up fit args.
+        if end_stage == 'lin':
+            assert SYMMETRIC_DIR == 'x' # FIXME handle y, z cases?
+            volsymm = pe.Node(interface=VolSymm(fit_linear=True, x=True),
+                              name='volsymm_stage_%02d' % snum) # => trans_file, output_file == $stage_model
+        else:
+            assert SYMMETRIC_DIR == 'x' # FIXME handle y, z cases?
+            volsymm = pe.Node(interface=VolSymm(fit_nonlinear=True, x=True, config_file=conf_fname),
+                              name='volsymm_stage_%02d' % snum) # => trans_file, output_file == $stage_model
+    else:
+        reshape_to_short = pe.Node(interface=utils.IdentityInterface(fields=['input_file']),
+                                   name='reshape_to_short_stage_%02d' % snum)
+        volsymm          = pe.Node(interface=utils.IdentityInterface(fields=['input_file']),
+                                   name='volsymm_stage_%02d' % snum)
+
+    # mincbigaverage -> reshape to short -> volsymm; final result is the stage model.
+    workflow.connect(big_average, 'output_file', reshape_to_short, 'input_file')
+    workflow.connect(reshape_to_short, 'output_file', volsymm, 'input_file')
+
+    # FIXME did I connect up all of these things? xfm output from volsym???
+
+    pik_stage_model = pe.Node(interface=Pik(triplanar=True,
+                                            horizontal_triplanar_view=True,
+                                            scale=4,
+                                            tile_size=400,
+                                            sagittal_offset=10),
+                              name='pik_stage_model_stage_%02d' % snum)
+
+    workflow.connect(volsymm, 'output_file', pik_stage_model, 'input_file')
+
+    workflow.connect(volsymm, 'output_file', datasink, 'stage_model_via_volsymm_stage_%02d' % snum)
+
+    # FIXME not implemented: # create and output standard deviation file if requested
+
+    stage_models[snum] = volsymm
 
 # Run single-core:
 #

@@ -12,6 +12,7 @@ from nipype.interfaces.base import (
     StdOutCommandLineInputSpec,
     StdOutCommandLine,
     File,
+    Directory,
     InputMultiPath,
     traits,
     isdefined,
@@ -115,7 +116,7 @@ class Info(object):
 
 # FIXME Range() produces an Int, not suitable for percentage ranges. Check all of these.
 
-# FIXME Check that *all* genfile outputs end up in the cwd, not as a mash of the 
+# FIXME Check that *all* genfile outputs end up in the cwd, not as a mash of the
 # input file.
 
 # FIXME check that ALL output_file things have genfile=True.
@@ -1349,8 +1350,7 @@ class PikInputSpec(CommandLineInputSpec):
     vertical_triplanar_view   = traits.Bool(desc='Create a vertical triplanar view (Default).', argstr='--vertical',   xor=_xor_vertical_horizontal)
     horizontal_triplanar_view = traits.Bool(desc='Create a horizontal triplanar view.',         argstr='--horizontal', xor=_xor_vertical_horizontal)
 
-    hotmetal = traits.Bool(desc='Undocumented flag "-hotmetal".', argstr='-hotmetal')
-    lookup   = traits.Bool(desc='Undocumented flag "-lookup".',   argstr='-lookup')
+    lookup = traits.Str(desc='Arguments to pass to minclookup', argstr='--lookup %s')
 
 class PikOutputSpec(TraitedSpec):
     output_file = File(desc='output image', exists=True)
@@ -1609,7 +1609,7 @@ class MathInputSpec(CommandLineInputSpec):
     check_dimensions    = traits.Bool(desc='Check that dimension info matches across files (default).', argstr='-check_dimensions',     xor=_xor_check_dimensions)
     no_check_dimensions = traits.Bool(desc='Do not check dimension info.',                              argstr='-nocheck_dimensions',   xor=_xor_check_dimensions)
 
-    dimension = traits.Str(desc='Specify a dimension along which we wish to perform a calculation.', argstr='-dimension')
+    dimension = traits.Str(desc='Specify a dimension along which we wish to perform a calculation.', argstr='-dimension %s')
 
     # FIXME Is it sensible to use ignore_nan and propagate_nan at the same time? Document this.
     ignore_nan = traits.Bool(desc='Ignore invalid data (NaN) for accumulations.', argstr='-ignore_nan')
@@ -2149,6 +2149,11 @@ class NormInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-1,)
 
+    threshold_mask = traits.File(
+                        desc='File in which to store the threshold mask.',
+                        argstr='-threshold_mask %s',
+                        genfile=True)
+
     clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
 
     # Normalisation Options
@@ -2175,12 +2180,6 @@ class NormInputSpec(CommandLineInputSpec):
     threshold_bmt = traits.Bool(desc='Use the resulting image BiModalT as the threshold.', argstr='-threshold_bmt')
 
     threshold_blur = traits.Float(desc='Blur FWHM for intensity edges then thresholding [default: 2].', argstr='-threshold_blur %s')
-
-    threshold_mask = traits.File(
-                        desc='File in which to store the threshold mask.',
-                        argstr='-threshold_mask %s',
-                        exists=True,
-                        genfile=True)
 
 class NormOutputSpec(TraitedSpec):
     output_file = File(desc='output file', exists=True)
@@ -2637,7 +2636,12 @@ class BestLinReg(CommandLine):
             else:
                 return aggregate_filename([self.inputs.source, self.inputs.target], 'bestlinreg_output')
         elif name == 'output_xfm':
-            return self._gen_filename('output_mnc') + 'output_xfm.xfm' # FIXME, tidy up
+            output_xfm = self.inputs.output_xfm
+
+            if isdefined(output_xfm):
+                return os.path.abspath(output_xfm)
+            else:
+                return aggregate_filename([self.inputs.source, self.inputs.target], 'bestlinreg_output') + 'output_xfm.xfm' # FIXME, tidy up
         else:
             raise NotImplemented
 
@@ -2863,8 +2867,7 @@ class BigAverageInputSpec(CommandLineInputSpec):
     robust = traits.Bool(desc='Perform robust averaging, features that are outside 1 standard deviation from the mean are downweighted. Works well for noisy data with artifacts. see the --tmpdir option if you have a large number of input files.', argstr='-robust')
 
     # Should Nipype deal with where the temp directory is?
-    # '-tmpdir', "$opt{'workdir'}/tmp",
-
+    tmpdir = Directory(desc='temporary files directory', argstr='-tmpdir %s')
     sd_file = File(desc='Place standard deviation image in specified file.', argstr='--sdfile %s', genfile=True)
 
 class BigAverageOutputSpec(TraitedSpec):
@@ -2907,3 +2910,135 @@ class BigAverage(CommandLine):
         outputs['sd_file']     = os.path.abspath(self._gen_filename('sd_file'))
         return outputs
 
+class ReshapeInputSpec(CommandLineInputSpec):
+    input_file = traits.File(
+                        desc='input file',
+                        exists=True,
+                        mandatory=True,
+                        argstr='%s',
+                        position=-2)
+
+    output_file = File(
+                    desc='output file',
+                    genfile=True,
+                    argstr='%s',
+                    position=-1,)
+
+    verbose = traits.Bool(desc='Print out log messages. Default: False.', argstr='-verbose')
+    clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
+
+    # FIXME MANY options not implemented!
+
+    write_short = traits.Bool(
+                    desc='Convert to short integer data.',
+                    argstr='-short')
+
+class ReshapeOutputSpec(TraitedSpec):
+    output_file = File(desc='output file', exists=True)
+
+class Reshape(CommandLine):
+    """
+    FIXME
+    """
+
+    input_spec  = ReshapeInputSpec
+    output_spec = ReshapeOutputSpec
+    _cmd = 'mincreshape'
+
+    def _gen_filename(self, name):
+        if name == 'output_file':
+            output_file = self.inputs.output_file
+
+            if isdefined(output_file):
+                return os.path.abspath(output_file)
+            else:
+                return aggregate_filename([self.inputs.input_file], 'reshape_output')
+        else:
+            raise NotImplemented
+
+    def _gen_outfilename(self):
+        return self._gen_filename('output_file')
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['output_file'] = os.path.abspath(self._gen_outfilename())
+        return outputs
+
+class VolSymmInputSpec(CommandLineInputSpec):
+    input_file = traits.File(
+                        desc='input file',
+                        exists=True,
+                        mandatory=True,
+                        argstr='%s',
+                        position=-3)
+
+    trans_file = traits.File(
+                        desc='output xfm trans file',
+                        genfile=True,
+                        argstr='%s',
+                        position=-2)
+
+    output_file = File(
+                    desc='output file',
+                    genfile=True,
+                    argstr='%s',
+                    position=-1,)
+
+    verbose = traits.Bool(desc='Print out log messages. Default: False.', argstr='-verbose')
+    clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
+
+    # FIXME MANY options not implemented!
+
+    fit_linear = traits.Bool(desc='Fit using a linear xfm.',        argstr='-linear')
+    fit_nonlinear = traits.Bool(desc='Fit using a non-linear xfm.', argstr='-nonlinear')
+
+    nofit = traits.Bool(desc='Use the input transformation instead of generating one.', argstr='-nofit')
+
+    config_file = File(
+                    desc='File containing the fitting configuration (nlpfit -help for info).',
+                    argstr='-config_file %s',
+                    exists=True)
+
+    x = traits.Bool(desc='Flip volume in x-plane (default).', argstr='-x')
+    y = traits.Bool(desc='Flip volume in y-plane.',           argstr='-y')
+    z = traits.Bool(desc='Flip volume in z-plane.',           argstr='-z')
+
+class VolSymmOutputSpec(TraitedSpec):
+    output_file = File(desc='output file',    exists=True)
+    trans_file  = File(desc='xfm trans file', exists=True)
+
+class VolSymm(CommandLine):
+    """
+    FIXME
+    """
+
+    input_spec  = VolSymmInputSpec
+    output_spec = VolSymmOutputSpec
+    _cmd = 'volsymm'
+
+    def _gen_filename(self, name):
+        if name == 'output_file':
+            output_file = self.inputs.output_file
+
+            if isdefined(output_file):
+                return os.path.abspath(output_file)
+            else:
+                return aggregate_filename([self.inputs.input_file], 'volsymm_output')
+        elif name == 'trans_file':
+            output_file = self.inputs.output_file
+
+            if isdefined(output_file):
+                return os.path.abspath(output_file)
+            else:
+                return aggregate_filename([self.inputs.input_file], 'volsymm_output') + '.xfm'
+        else:
+            raise NotImplemented
+
+    def _gen_outfilename(self):
+        return self._gen_filename('output_file')
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['output_file'] = os.path.abspath(self._gen_filename('output_file'))
+        outputs['trans_file']  = os.path.abspath(self._gen_filename('trans_file'))
+        return outputs
