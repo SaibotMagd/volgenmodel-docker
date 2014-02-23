@@ -478,7 +478,7 @@ for snum in range(len(fit_stages)): # for($snum = 0; $snum <= $#fit_stages; $snu
             threshold=True,
             threshold_perc=opt['model_norm_thresh'],
             threshold_blur=3,
-            threshold_mask=isomodel_base + ".msk.mnc",
+            output_threshold_mask=isomodel_base + ".msk.mnc",
             input_file=cmodel,
             output_file=isomodel_base + ".nrm.mnc")
     norm.run()
@@ -614,8 +614,9 @@ for snum in range(len(fit_stages)): # for($snum = 0; $snum <= $#fit_stages; $snu
     #               'xfmavg', '-clobber',
     #               (($end_stage eq 'lin') ? '-ignore_nonlinear' : '-ignore_linear'),
     #               @modxfm, $avgxfm);
+    assert None not in modxfm
     xfmavg = XfmAvg(
-                input_files=[m for m in modxfm if m is not None], # FIXME averaging model xfms so far?
+                input_files=modxfm,
                 output_file=avgxfm)
 
     if end_stage == 'lin':
