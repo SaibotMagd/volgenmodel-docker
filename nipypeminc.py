@@ -3032,10 +3032,10 @@ class VolSymm(CommandLine):
             else:
                 return aggregate_filename([self.inputs.input_file], 'volsymm_output')
         elif name == 'trans_file':
-            output_file = self.inputs.output_file
+            trans_file = self.inputs.trans_file
 
-            if isdefined(output_file):
-                return os.path.abspath(output_file)
+            if isdefined(trans_file):
+                return os.path.abspath(trans_file)
             else:
                 return aggregate_filename([self.inputs.input_file], 'volsymm_output') + '.xfm'
         else:
