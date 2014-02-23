@@ -20,6 +20,7 @@ from nipype.interfaces.base import (
 
 import os
 import os.path
+import re
 
 import warnings
 warn = warnings.warn
@@ -2149,7 +2150,7 @@ class NormInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-1,)
 
-    threshold_mask = traits.File(
+    output_threshold_mask = traits.File(
                         desc='File in which to store the threshold mask.',
                         argstr='-threshold_mask %s',
                         genfile=True)
@@ -2183,7 +2184,7 @@ class NormInputSpec(CommandLineInputSpec):
 
 class NormOutputSpec(TraitedSpec):
     output_file = File(desc='output file', exists=True)
-    threshold_mask = File(desc='threshold mask file')
+    output_threshold_mask = File(desc='threshold mask file')
 
 class Norm(CommandLine):
     """Normalise a file between a max and minimum (possibly)
@@ -2210,11 +2211,11 @@ class Norm(CommandLine):
                 return os.path.abspath(output_file)
             else:
                 return aggregate_filename([self.inputs.input_file], 'norm_output')
-        elif name == 'threshold_mask':
-            threshold_mask = self.inputs.threshold_mask
+        elif name == 'output_threshold_mask':
+            output_threshold_mask = self.inputs.output_threshold_mask
 
-            if isdefined(threshold_mask):
-                return os.path.abspath(threshold_mask)
+            if isdefined(output_threshold_mask):
+                return os.path.abspath(output_threshold_mask)
             else:
                 return aggregate_filename([self.inputs.input_file], 'norm_output_threshold_mask')
         else:
@@ -2226,6 +2227,7 @@ class Norm(CommandLine):
     def _list_outputs(self):
         outputs = self.output_spec().get()
         outputs['output_file'] = os.path.abspath(self._gen_outfilename())
+        outputs['output_threshold_mask'] = self._gen_filename('output_threshold_mask')
         return outputs
 
 
@@ -2489,6 +2491,7 @@ class GennlxfmInputSpec(CommandLineInputSpec):
 
 class GennlxfmOutputSpec(TraitedSpec):
     output_file = File(desc='output file', exists=True)
+    output_grid = File(desc='output grid', exists=True)
 
 class Gennlxfm(CommandLine):
     """
@@ -2516,8 +2519,11 @@ class Gennlxfm(CommandLine):
         return self._gen_filename('output_file')
 
     def _list_outputs(self):
+        # FIXME The xfm output has only the basename of the grid file, will this cause problems?
+        # See also lines 89-92 of gennlxfm.
         outputs = self.output_spec().get()
         outputs['output_file'] = os.path.abspath(self._gen_outfilename())
+        outputs['output_grid'] = re.sub('.(nlxfm|xfm)$', '_grid_0.mnc', outputs['output_file'])
         return outputs
 
 class XfmConcatInputSpec(CommandLineInputSpec):
@@ -2992,6 +2998,7 @@ class VolSymmInputSpec(CommandLineInputSpec):
     fit_linear = traits.Bool(desc='Fit using a linear xfm.',        argstr='-linear')
     fit_nonlinear = traits.Bool(desc='Fit using a non-linear xfm.', argstr='-nonlinear')
 
+    # FIXME This changes the input/output behaviour of trans_file! Split into two separate interfaces?
     nofit = traits.Bool(desc='Use the input transformation instead of generating one.', argstr='-nofit')
 
     config_file = File(
