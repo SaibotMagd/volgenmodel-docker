@@ -26,3 +26,7 @@ runs the workflow on a single core, or
     workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 4})
 
 runs it on 4 cores.
+
+The workflow for a small 3-stage model is:
+
+![workflow fast-example](https://github.com/carlohamalainen/volgenmodel-nipype/blob/master/volgenmodel_graph.png)
