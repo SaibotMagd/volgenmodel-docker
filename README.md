@@ -2,13 +2,6 @@
 
 Port of volgenmodel to Nipype along with interfaces for a number of Minc tools.
 
-# Status
-
-Things still left to do:
-
-* Many FIXMEs in ```volgenmodel.py```.
-* Symmetric averaging (end of stage).
-
 # Install
 
 Prerequisites:
