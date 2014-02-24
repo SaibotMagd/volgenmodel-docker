@@ -29,4 +29,4 @@ runs it on 4 cores.
 
 The workflow for a small 3-stage model is:
 
-![workflow fast-example](https://github.com/carlohamalainen/volgenmodel-nipype/blob/master/volgenmodel_graph.png)
+![workflow fast-example](https://github.com/carlohamalainen/volgenmodel-nipype/raw/master/volgenmodel_graph.png)
