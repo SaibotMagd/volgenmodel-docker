@@ -5,8 +5,8 @@
 
 # Author: Carlo Hamalainen <carlo@carlo-hamalainen.net>
 
-from nipype import config
-config.enable_debug_mode()
+# from nipype import config
+# config.enable_debug_mode()
 
 import os
 import os.path
@@ -102,7 +102,7 @@ def do_cmd(cmd):
     if stderr == '':
         return stdout
     else:
-        assert False, 'Stuff on stderr: ' + str(stderr) # FIXME Change to an appropriate exception?
+        assert False, 'Stuff on stderr: ' + str(stderr)
 
 def get_step_sizes(mincfile):
     """
@@ -663,7 +663,7 @@ if __name__ == '__main__':
                                             robust=True),
                                             # tmpdir=os.path.join(opt['workdir'], 'tmp'),
                                             # sd_file=istdfile,
-                                            # input_files=[r for r in rsmpl if r is not None], # FIXME need this filter?
+                                            # input_files=rsmpl,
                                             # output_file=iavgfile),
                             name='bigaverage_' + snum_txt,
                             iterfield=['input_file'])
