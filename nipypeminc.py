@@ -14,10 +14,12 @@ from nipype.interfaces.base import (
     File,
     Directory,
     InputMultiPath,
+    OutputMultiPath,
     traits,
     isdefined,
 )
 
+import glob
 import os
 import os.path
 import re
@@ -2547,6 +2549,7 @@ class XfmConcatInputSpec(CommandLineInputSpec):
 
 class XfmConcatOutputSpec(TraitedSpec):
     output_file = File(desc='output file', exists=True)
+    output_grids = OutputMultiPath(desc='output grids', exists=True) # FIXME is exists=True always the case?
 
 class XfmConcat(CommandLine):
     """
@@ -2574,6 +2577,12 @@ class XfmConcat(CommandLine):
     def _list_outputs(self):
         outputs = self.output_spec().get()
         outputs['output_file'] = os.path.abspath(self._gen_outfilename())
+
+        # FIXME Is this the sensible? No other way to tell if the grid files were produced.
+        assert os.path.exists(outputs['output_file']) # FIXME This is safe to assume?
+        if 'grid' in open(outputs['output_file'], 'r').read():
+            outputs['output_grids'] = glob.glob(re.sub('.(nlxfm|xfm)$', '_grid_*.mnc', outputs['output_file']))
+
         return outputs
 
 class BestLinRegInputSpec(CommandLineInputSpec):
@@ -2711,9 +2720,11 @@ class NlpFitInputSpec(CommandLineInputSpec):
     # FIXME Very bare implementation, many parameters not done yet.
 
 class NlpFitOutputSpec(TraitedSpec):
-    output_xfm = File(desc='output xfm file', exists=True)
-    # output_mnc = File(desc='output mnc file', exists=True)
     # FIXME nlpfit has two modes... deal with output.xfm vs output.mnc
+    # depending on whether -config_file is passed.
+
+    output_xfm  = File(desc='output xfm file',  exists=True)
+    output_grid = File(desc='output grid file', exists=True) # FIXME Is this always the case, that exists=True?
 
 class NlpFit(CommandLine):
     """
@@ -2731,7 +2742,7 @@ class NlpFit(CommandLine):
             if isdefined(output_xfm):
                 return os.path.abspath(output_xfm)
             else:
-                return aggregate_filename([self.inputs.source, self.inputs.target], 'nlpfit_xfm_output')
+                return aggregate_filename([self.inputs.source, self.inputs.target], 'nlpfit_xfm_output') + '.xfm'
         else:
             raise NotImplemented
 
@@ -2740,6 +2751,12 @@ class NlpFit(CommandLine):
         # FIXME see above.
         # outputs['output_mnc'] = os.path.abspath(self._gen_filename('output_mnc'))
         outputs['output_xfm'] = os.path.abspath(self._gen_filename('output_xfm'))
+
+        # FIXME Is this the sensible? No other way to tell if the grid files were produced.
+        assert os.path.exists(outputs['output_xfm']) # FIXME This is safe to assume?
+        if 'grid' in open(outputs['output_xfm'], 'r').read():
+            outputs['output_grid'] = re.sub('.(nlxfm|xfm)$', '_grid_0.mnc', outputs['output_xfm'])
+
         return outputs
 
 class XfmAvgInputSpec(CommandLineInputSpec):
@@ -2771,6 +2788,7 @@ class XfmAvgInputSpec(CommandLineInputSpec):
 
 class XfmAvgOutputSpec(TraitedSpec):
     output_file = File(desc='output file', exists=True)
+    output_grid = File(desc='output grid file', exists=True) # FIXME is exists=True always correct?
 
 class XfmAvg(CommandLine):
     """
@@ -2798,6 +2816,12 @@ class XfmAvg(CommandLine):
     def _list_outputs(self):
         outputs = self.output_spec().get()
         outputs['output_file'] = os.path.abspath(self._gen_outfilename())
+
+        # FIXME Is this the sensible? No other way to tell if the grid files were produced.
+        assert os.path.exists(outputs['output_file']) # FIXME This is safe to assume?
+        if 'grid' in open(outputs['output_file'], 'r').read():
+            outputs['output_grid'] = re.sub('.(nlxfm|xfm)$', '_grid_0.mnc', outputs['output_file'])
+
         return outputs
 
 class XfmInvertInputSpec(CommandLineInputSpec):
@@ -2819,6 +2843,7 @@ class XfmInvertInputSpec(CommandLineInputSpec):
 
 class XfmInvertOutputSpec(TraitedSpec):
     output_file = File(desc='output file', exists=True)
+    output_grid = File(desc='output grid file', exists=True) # FIXME is exists=True always correct?
 
 class XfmInvert(CommandLine):
     """
@@ -2846,6 +2871,12 @@ class XfmInvert(CommandLine):
     def _list_outputs(self):
         outputs = self.output_spec().get()
         outputs['output_file'] = os.path.abspath(self._gen_outfilename())
+
+        # FIXME Is this the sensible? No other way to tell if the grid files were produced.
+        assert os.path.exists(outputs['output_file']) # FIXME This is safe to assume?
+        if 'grid' in open(outputs['output_file'], 'r').read():
+            outputs['output_grid'] = re.sub('.(nlxfm|xfm)$', '_grid_0.mnc', outputs['output_file'])
+
         return outputs
 
 class BigAverageInputSpec(CommandLineInputSpec):
@@ -3013,6 +3044,7 @@ class VolSymmInputSpec(CommandLineInputSpec):
 class VolSymmOutputSpec(TraitedSpec):
     output_file = File(desc='output file',    exists=True)
     trans_file  = File(desc='xfm trans file', exists=True)
+    output_grid = File(desc='output grid file', exists=True) # FIXME Is exists=True correct?
 
 class VolSymm(CommandLine):
     """
@@ -3048,4 +3080,10 @@ class VolSymm(CommandLine):
         outputs = self.output_spec().get()
         outputs['output_file'] = os.path.abspath(self._gen_filename('output_file'))
         outputs['trans_file']  = os.path.abspath(self._gen_filename('trans_file'))
+
+        # FIXME Is this the sensible? No other way to tell if the grid files were produced.
+        assert os.path.exists(outputs['trans_file']) # FIXME This is safe to assume?
+        if 'grid' in open(outputs['trans_file'], 'r').read():
+            outputs['output_grid'] = re.sub('.(nlxfm|xfm)$', '_grid_0.mnc', outputs['trans_file'])
+
         return outputs

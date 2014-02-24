@@ -131,6 +131,11 @@ if __name__ == '__main__':
 
     # Top level workflow.
     workflow = pe.Workflow(name="workflow")
+
+    # FIXME
+    # Just for testing, tell Nipype to keep all outputs.
+    # workflow.config['execution'] = {'remove_unnecessary_outputs': 'false'}
+
     workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 
     infiles = glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'sml*.mnc'))
@@ -142,7 +147,7 @@ if __name__ == '__main__':
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, 'volgenmodel_final_output'))
 
-    infiles = sorted(glob.glob('/scratch/fast-example/sml*mnc'))
+    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'sml*mnc')))
 
     opt = { 'verbose': 0,
             'clobber': 0,
@@ -150,7 +155,7 @@ if __name__ == '__main__':
             'check': 1,
             'clean': 0,
             'keep_tmp': 0,
-            'workdir': os.path.join(os.getcwd(), 'work'), # "./$me-work",
+            # 'workdir': os.path.join(os.getcwd(), 'work'), # "./$me-work",
             'batch': 0,
             'symmetric': 0,
             'symmetric_dir': 'x',
@@ -175,11 +180,11 @@ if __name__ == '__main__':
     opt['model_norm_thresh'] = 0.1
     opt['model_min_step'] = 1.0
     opt['pad'] = 5
-    opt['config_file'] = '/scratch/fast-example/fit.10-genmodel.conf'
+    opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
     opt['fit_stages'] = 'lin,1,3'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
-    opt['workdir'] = '/scratch/fast-example/work'
+    # opt['workdir'] = '/scratch/fast-example/work'
     opt['verbose'] = 1
     opt['clobber'] = 1
 
@@ -220,35 +225,6 @@ if __name__ == '__main__':
         if opt['verbose']:
             print "  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c])
         c += 1
-
-    # # check for output model
-    # $opt{'output_model'} = "$dirs[0]/VolModel-ALL.mnc" if !defined($opt{'output_model'});
-    # if(-e $opt{'output_model'} && !$opt{'clobber'}){
-    #    die "$me: $opt{'output_model'} exists, use -clobber to overwrite\n\n";
-    #    }
-
-    # make working dir
-    do_cmd('mkdir ' + opt['workdir']) # if !-e $opt{'workdir'};
-
-    # save the original command
-    # open(FH, '>', "$opt{'workdir'}/orig-command.sh");
-    # print FH "#! /bin/sh\n" .
-    #          "#\n".
-    #          "# volgenmodel script\n\n" .
-    #          join(' ', @orig_cmd) ."\n";
-    # close(FH);
-    # &do_cmd('chmod', '+x', "$opt{'workdir'}/orig-command.sh");
-
-    # write script to kill processing
-    # if($opt{'batch'}){
-    #   open(FH, '>', "$opt{'workdir'}/kill-proc.sh");
-    #   print FH "#! /bin/sh\n" .
-    #            "#\n" .
-    #            "# simple script to kill processing\n\n" .
-    #            "qdel \'*$$*\'\n";
-    #   close(FH);
-    #   &do_cmd('chmod', '+x', "$opt{'workdir'}/kill-proc.sh");
-    #   }
 
     # set up the @conf array
     if opt['config_file'] is not None:
@@ -386,6 +362,16 @@ if __name__ == '__main__':
                                     name='identity_transformation')
 
     workflow.connect(initial_model, 'output_file', identity_transformation, 'like')
+
+    # FIXME Nipype likes to remove unused output files (to save disk space) and so it deletes
+    # the grid file corresponding to the identity transformation. This file is an implicit parameter
+    # to the later use of xfmconcat_for_nlpfit so there is no workflow connection. As a temporary
+    # workaround, we send the grid file to the datasink.
+    #
+    # A better solution would be to make the grid file another input for the xfmconcat and nlpfit
+    # interfaces as it is an implicit input. In more complicated workflows it should be clear that
+    # the file is being used in a certain node.
+    workflow.connect(identity_transformation, 'output_grid', datasink, 'identity_transformation_grid')
 
     # get last linear stage from fit config
 
@@ -554,7 +540,8 @@ if __name__ == '__main__':
                                 name='xfmconcat_for_nlpfit_' + snum_txt,
                                 iterfield=['input_files'])
 
-            # FIXME pass to xfmconcat
+            # FIXME send grid files to the sink; this is dodgy. See earlier comment.
+            workflow.connect(xfmconcat, 'output_grids', datasink, 'xfmconcat_for_nlpfit_' + snum_txt)
 
             merge_lastlin_initxfm = pe.MapNode(
                             interface=utils.Merge(2),
@@ -582,6 +569,9 @@ if __name__ == '__main__':
             workflow.connect(voliso,            'output_file', nlpfit, 'source') # FIXME Double-check that ```isomodel_base + ".mnc"``` comes from voliso.
             workflow.connect(preprocess_voliso, 'output_file', nlpfit, 'target') # FIXME Make sure that fitfiles[f] is preprocess_voliso at this point in the program.
 
+            # FIXME send grid files to the sink; this is dodgy. See earlier comment.
+            workflow.connect(nlpfit, 'output_grid', datasink, 'nlpfit_' + snum_txt)
+
             modxfm = nlpfit
 
         # average xfms
@@ -590,6 +580,9 @@ if __name__ == '__main__':
                                     # input_files=modxfm,
                                     # output_file=avgxfm),
                         name='xfmavg_' + snum_txt)
+
+        # FIXME send grid files to the sink; this is dodgy. See earlier comment.
+        workflow.connect(xfmavg, 'output_grid', datasink, 'xfmavg_' + snum_txt)
 
         workflow.connect(modxfm, 'output_xfm', xfmavg, 'input_files') # FIXME check that this works - multiple outputs of MapNode going into single list of xfmavg.
 
@@ -609,6 +602,9 @@ if __name__ == '__main__':
 
         workflow.connect(modxfm, 'output_xfm', xfminvert, 'input_file')
 
+        # FIXME send grid files to the sink; this is dodgy. See earlier comment.
+        workflow.connect(xfminvert, 'output_grid', datasink, 'xfminvert_' + snum_txt)
+
         # concat: invxfm, avgxfm
         merge_xfm = pe.MapNode(
                         interface=utils.Merge(2),
@@ -624,6 +620,9 @@ if __name__ == '__main__':
                                             # output_file=resxfm),
                             name='xfmconcat_' + snum_txt,
                             iterfield=['input_files'])
+
+        # FIXME send grid files to the sink; this is dodgy. See earlier comment.
+        workflow.connect(xfmconcat, 'output_grids', datasink, 'xfmconcat_' + snum_txt)
 
         workflow.connect(merge_xfm, 'out', xfmconcat, 'input_files')
 
@@ -707,6 +706,9 @@ if __name__ == '__main__':
                                                     # output_file=stage_model),
                                     name='volsymm_on_short_' + snum_txt)
 
+            # FIXME send grid files to the sink; this is dodgy. See earlier comment.
+            workflow.connect(volsymm_on_short, 'output_grid', datasink, 'volsymm_on_short_' + snum_txt)
+
             workflow.connect(resample_to_short, 'output_file', volsymm_on_short, 'input_file')
 
             # set up fit args
@@ -758,6 +760,9 @@ if __name__ == '__main__':
                                                                 # output_file=opt['output_stdev']),
                                                 name='volsymm_final_model_' + snum_txt)
 
+                    # FIXME send grid files to the sink; this is dodgy. See earlier comment.
+                    workflow.connect(volsymm_final_model, 'output_grid', datasink, 'volsymm_final_model_' + snum_txt)
+
                     workflow.connect(bigaverage,        'sd_file',      volsymm_final_model, 'input_file')
                     workflow.connect(volsymm_on_short,  'trans_file',   volsymm_final_model, 'trans_file')
                     workflow.connect(volsymm_final_model, 'output_file', datasink, 'stdev') # FIXME we ignore opt['output_stdev']
@@ -766,3 +771,5 @@ if __name__ == '__main__':
                     workflow.connect(bigaverage, 'sd_file', datasink, 'stdev') # FIXME we ignore opt['output_stdev']
 
         cmodel = stage_model
+
+    workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 8})
