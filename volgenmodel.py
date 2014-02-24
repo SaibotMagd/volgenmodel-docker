@@ -46,7 +46,7 @@ def load_pklz(f):
 def _calc_threshold_blur_preprocess(input_file):
     import sys
     sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
-    from volgenmodel1 import get_step_sizes
+    from volgenmodel import get_step_sizes
     (step_x, step_y, step_z) = get_step_sizes(input_file)
     return abs(step_x + step_y + step_z)
 
@@ -59,7 +59,7 @@ calc_threshold_blur_preprocess = utils.Function(
 def _calc_initial_model_fwhm3d(input_file):
     import sys
     sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
-    from volgenmodel1 import get_step_sizes
+    from volgenmodel import get_step_sizes
     (xstep, ystep, zstep) = get_step_sizes(input_file)
     return (abs(xstep*4), abs(ystep*4), abs(zstep*4))
 
@@ -75,6 +75,14 @@ def to_perl_syntax(d):
     """
 
     return str(d).replace(':', ' => ').replace('[', '(').replace(']', ')')
+
+def from_perl_syntax(d):
+    """
+    Essentially the inverse of to_perl_syntax() but we also nuke the
+    '@' prefix on a list.
+    """
+
+    return str(d).replace(' => ', ':').replace('(', '[').replace(')', ']').replace('@', '')
 
 def do_cmd(cmd):
     """
@@ -167,7 +175,7 @@ if __name__ == '__main__':
     opt['model_norm_thresh'] = 0.1
     opt['model_min_step'] = 1.0
     opt['pad'] = 5
-    opt['config_file'] = '/scratch/fast-example/py.fit.10-genmodel.conf'
+    opt['config_file'] = '/scratch/fast-example/fit.10-genmodel.conf'
     opt['fit_stages'] = 'lin,1,3'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
@@ -244,7 +252,9 @@ if __name__ == '__main__':
 
     # set up the @conf array
     if opt['config_file'] is not None:
-        conf = eval(open(opt['config_file'], 'r').read())
+        conf = None
+        exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
+        assert conf is not None
     else:
         conf = default_conf
 
