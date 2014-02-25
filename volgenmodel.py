@@ -14,6 +14,7 @@ import subprocess
 import nipype.pipeline.engine as pe
 import nipype.interfaces.io as nio
 import nipype.interfaces.utility as utils
+from copy import deepcopy
 
 from nipypeminc import  \
         Volcentre,      \
@@ -67,6 +68,45 @@ calc_initial_model_fwhm3d = utils.Function(
                                         input_names=['input_file'],
                                         output_names=['fwhm3d'],
                                         function=_calc_initial_model_fwhm3d)
+
+def _write_stage_conf_file(snum, snum_txt, conf, end_stage):
+    assert snum is not None
+    assert snum_txt is not None
+    assert conf is not None
+    assert end_stage is not None
+
+    import os.path
+    import sys
+
+    sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
+    from volgenmodel import to_perl_syntax
+
+    conf_fname = os.path.join(os.getcwd(), "fit_stage_%02d.conf" % snum)
+    # print "    + Creating", conf_fname
+
+    with open(conf_fname, 'w') as CONF:
+        CONF.write("# %s -- created by %s\n#\n" % (conf_fname, 'FIXME'))
+        CONF.write("# End stage: " + str(end_stage) + "\n")
+        CONF.write("# Stage Num: " + snum_txt + "\n\n")
+
+        CONF.write('@conf = ')
+
+        conf_dicts = []
+        for s in range(end_stage + 1):
+            conf_dicts.append({'step': + conf[s]['step'],
+                               'blur_fwhm': conf[s]['blur_fwhm'],
+                               'iterations': conf[s]['iterations']})
+
+        CONF.write(to_perl_syntax(conf_dicts))
+
+        CONF.write("\n")
+
+    return conf_fname
+
+write_stage_conf_file = utils.Function(
+                                    input_names=['snum', 'snum_txt', 'conf', 'end_stage'],
+                                    output_names=['conf_fname'],
+                                    function=_write_stage_conf_file)
 
 def to_perl_syntax(d):
     """
@@ -252,7 +292,7 @@ if __name__ == '__main__':
     # normalise
     if opt['normalise']:
         preprocess_threshold_blur = pe.MapNode(
-                                        interface=calc_threshold_blur_preprocess,
+                                        interface=deepcopy(calc_threshold_blur_preprocess), # Beware! Need deepcopy since calc_threshold_blur_preprocess is not a constructor!
                                         name='preprocess_threshold_blur',
                                         iterfield=['input_file'])
 
@@ -343,7 +383,7 @@ if __name__ == '__main__':
         workflow.connect(datasource, 'outfiles', select_first_datasource, 'inlist')
 
         # Calculate the fhwm3d parameter using the first datasource.
-        initial_model_fwhm3d = pe.Node(interface=calc_initial_model_fwhm3d, name='initial_model_fwhm3d')
+        initial_model_fwhm3d = pe.Node(interface=deepcopy(calc_initial_model_fwhm3d), name='initial_model_fwhm3d') # Beware! Need deepcopy since calc_initial_model_fwhm3d is not a constructor!
         workflow.connect(select_first_datasource, 'out', initial_model_fwhm3d, 'input_file')
 
 
@@ -386,7 +426,7 @@ if __name__ == '__main__':
         end_stage = None
         # f = None
         # cworkdir = None
-        conf_fname = None
+        # conf_fname = None
         # modxfm = [None] * len(files)
         # rsmpl = [None] * len(files)
 
@@ -484,25 +524,18 @@ if __name__ == '__main__':
 
             # create nlin fit config
             if end_stage != 'lin':
-                conf_fname = os.path.join('/tmp/', "fit_stage_%02d.conf" % snum) # FIXME This should be done in an interface!!!!
-                print "    + Creating", conf_fname
+                write_conf = pe.Node(
+                                    interface=deepcopy(write_stage_conf_file), # Beware! Need deepcopy since write_stage_conf_file is not a constructor!
+                                    name='write_conf_' + snum_txt)
 
-                with open(conf_fname, 'w') as CONF:
-                    CONF.write("# %s -- created by %s\n#\n" % (conf_fname, 'FIXME'))
-                    CONF.write("# End stage: " + str(end_stage) + "\n")
-                    CONF.write("# Stage Num: " + snum_txt + "\n\n")
+                write_conf.inputs.snum       = snum
+                write_conf.inputs.snum_txt   = snum_txt
+                write_conf.inputs.conf       = conf
+                write_conf.inputs.end_stage  = end_stage
 
-                    CONF.write('@conf = ')
+                print 'ZZZ', snum, end_stage, write_conf.inputs.snum, write_conf.inputs.end_stage
 
-                    conf_dicts = []
-                    for s in range(end_stage + 1):
-                        conf_dicts.append({'step': + conf[s]['step'],
-                                           'blur_fwhm': conf[s]['blur_fwhm'],
-                                           'iterations': conf[s]['iterations']})
-
-                    CONF.write(to_perl_syntax(conf_dicts))
-
-                    CONF.write("\n")
+                workflow.connect(write_conf, 'conf_fname', datasink, 'FIXME_write_conf_' + snum_txt)
 
         # register each file in the input series
         if end_stage == 'lin':
@@ -543,15 +576,17 @@ if __name__ == '__main__':
             workflow.connect(identity_transformation, 'output_grid', xfmconcat, 'input_grid_files')
 
             nlpfit = pe.MapNode(
-                            interface=NlpFit(
+                            interface=NlpFit(),
                                         # init_xfm=initcnctxfm,
-                                        config_file=conf_fname),
+                                        # config_file=conf_fname),
                                         # source_mask=isomodel_base + ".fit-msk.mnc",
                                         # source=isomodel_base + ".mnc",
                                         # target=fitfiles[f],
                                         # output_xfm=modxfm[f]),
                             name='nlpfit_' + snum_txt,
                             iterfield=['target', 'init_xfm'])
+
+            workflow.connect(write_conf, 'conf_fname', nlpfit, 'config_file')
 
             workflow.connect(xfmconcat,         'output_file', nlpfit, 'init_xfm')
             workflow.connect(mincmath,          'output_file', nlpfit, 'source_mask')
@@ -601,13 +636,13 @@ if __name__ == '__main__':
         workflow.connect(xfmavg,    'output_file', merge_xfm, 'in2')
 
         # Merge for the grid files of xfminvert and xfmavg; sent to xfmconcat:input_grid_files.
-        merge_xfm_grid_files = pe.MapNode(
-                                    interface=utils.Merge(2),
-                                    name='merge_xfm_grid_files' + snum_txt,
-                                    iterfield=['in1'])
+        # merge_xfm_grid_files = pe.Node(
+        #                             interface=utils.Merge(2),
+        #                             name='merge_xfm_grid_files' + snum_txt)
+        #                             # iterfield=['in1'])
 
-        workflow.connect(xfminvert, 'output_grid', merge_xfm_grid_files, 'in1')
-        workflow.connect(xfmavg,    'output_grid', merge_xfm_grid_files, 'in2')
+        # workflow.connect(xfminvert, 'output_grid', merge_xfm_grid_files, 'in1') # 00ch
+        # workflow.connect(xfmavg,    'output_grid', merge_xfm_grid_files, 'in2') # 00ch
 
         xfmconcat = pe.MapNode(
                             interface=XfmConcat(),
@@ -618,7 +653,11 @@ if __name__ == '__main__':
 
         workflow.connect(merge_xfm, 'out', xfmconcat, 'input_files')
 
-        workflow.connect(merge_xfm_grid_files, 'out', xfmconcat, 'input_grid_files')
+        # workflow.connect(merge_xfm_grid_files, 'out', xfmconcat, 'input_grid_files') # 00ch
+
+        # FIXME This is just for testing, something's iffy with the merge_xfm_grid_files node.
+        workflow.connect(xfminvert, 'output_grid', datasink, 'xfminvert_grid_file_' + snum_txt) # 00ch
+        workflow.connect(xfmavg,    'output_grid', datasink, 'xfmavg_' + snum_txt) # 00ch
 
         # resample
         resample = pe.MapNode(
@@ -633,7 +672,7 @@ if __name__ == '__main__':
         workflow.connect(preprocess_normalise, 'output_file', resample, 'input_file')
 
         workflow.connect(xfmconcat, 'output_file',  resample, 'transformation')
-        workflow.connect(xfmconcat, 'output_grids', resample, 'input_grid_files')
+        # workflow.connect(xfmconcat, 'output_grids', resample, 'input_grid_files') # 00ch
 
         workflow.connect(voliso,               'output_file', resample, 'like')
 
@@ -700,6 +739,8 @@ if __name__ == '__main__':
                                                     # output_file=stage_model),
                                     name='volsymm_on_short_' + snum_txt)
 
+            workflow.connect(volsymm_on_short, 'output_grid', datasink, 'volsymm_on_short_' + snum_txt) # 00ch
+
             workflow.connect(resample_to_short, 'output_file', volsymm_on_short, 'input_file')
 
             # set up fit args
@@ -707,7 +748,8 @@ if __name__ == '__main__':
                 volsymm_on_short.interface.inputs.fit_linear = True
             else:
                 volsymm_on_short.interface.inputs.fit_nonlinear = True
-                volsymm_on_short.interface.inputs.config_file = conf_fname
+                workflow.connect(write_conf, 'conf_fname', volsymm_on_short, 'config_file')
+
         else:
             # do_cmd('ln -s -f %s %s' % (os.path.basename(iavgfile), stage_model,))
             volsymm_on_short = pe.Node(
