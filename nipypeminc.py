@@ -1844,6 +1844,11 @@ class ResampleInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-1,)
 
+    # FIXME This is a dummy input...
+    input_grid_files = InputMultiPath(
+                        traits.File,
+                        desc='input grid file(s)',)
+
     two = traits.Bool(desc='Create a MINC 2 output file.', argstr='-2')
 
     clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
@@ -2538,6 +2543,11 @@ class XfmConcatInputSpec(CommandLineInputSpec):
                         argstr='%s',
                         position=-2)
 
+    # FIXME This is a dummy input...
+    input_grid_files = InputMultiPath(
+                        traits.File,
+                        desc='input grid file(s)',)
+
     output_file = File(
                     desc='output file',
                     genfile=True,
@@ -2694,6 +2704,11 @@ class NlpFitInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-1,)
 
+    # FIXME This is a dummy input...
+    input_grid_files = InputMultiPath(
+                        traits.File,
+                        desc='input grid file(s)',)
+
     # FIXME outout_mnc?
 
     config_file = File(
@@ -2768,6 +2783,11 @@ class XfmAvgInputSpec(CommandLineInputSpec):
                         sep=' ',
                         argstr='%s',
                         position=-2)
+
+    # FIXME This is a dummy input...
+    input_grid_files = InputMultiPath(
+                        traits.File,
+                        desc='input grid file(s)',)
 
     output_file = File(
                     desc='output file',

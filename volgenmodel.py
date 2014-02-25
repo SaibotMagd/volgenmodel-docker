@@ -363,16 +363,6 @@ if __name__ == '__main__':
 
     workflow.connect(initial_model, 'output_file', identity_transformation, 'like')
 
-    # FIXME Nipype likes to remove unused output files (to save disk space) and so it deletes
-    # the grid file corresponding to the identity transformation. This file is an implicit parameter
-    # to the later use of xfmconcat_for_nlpfit so there is no workflow connection. As a temporary
-    # workaround, we send the grid file to the datasink.
-    #
-    # A better solution would be to make the grid file another input for the xfmconcat and nlpfit
-    # interfaces as it is an implicit input. In more complicated workflows it should be clear that
-    # the file is being used in a certain node.
-    workflow.connect(identity_transformation, 'output_grid', datasink, 'identity_transformation_grid')
-
     # get last linear stage from fit config
 
     s = None
@@ -540,9 +530,6 @@ if __name__ == '__main__':
                                 name='xfmconcat_for_nlpfit_' + snum_txt,
                                 iterfield=['input_files'])
 
-            # FIXME send grid files to the sink; this is dodgy. See earlier comment.
-            workflow.connect(xfmconcat, 'output_grids', datasink, 'xfmconcat_for_nlpfit_' + snum_txt)
-
             merge_lastlin_initxfm = pe.MapNode(
                             interface=utils.Merge(2),
                             name='merge_lastlin_initxfm_' + snum_txt,
@@ -552,6 +539,8 @@ if __name__ == '__main__':
             workflow.connect(identity_transformation,    'output_file', merge_lastlin_initxfm, 'in2')
 
             workflow.connect(merge_lastlin_initxfm, 'out', xfmconcat, 'input_files')
+
+            workflow.connect(identity_transformation, 'output_grid', xfmconcat, 'input_grid_files')
 
             nlpfit = pe.MapNode(
                             interface=NlpFit(
@@ -569,8 +558,7 @@ if __name__ == '__main__':
             workflow.connect(voliso,            'output_file', nlpfit, 'source') # FIXME Double-check that ```isomodel_base + ".mnc"``` comes from voliso.
             workflow.connect(preprocess_voliso, 'output_file', nlpfit, 'target') # FIXME Make sure that fitfiles[f] is preprocess_voliso at this point in the program.
 
-            # FIXME send grid files to the sink; this is dodgy. See earlier comment.
-            workflow.connect(nlpfit, 'output_grid', datasink, 'nlpfit_' + snum_txt)
+            workflow.connect(xfmconcat, 'output_grids', nlpfit, 'input_grid_files')
 
             modxfm = nlpfit
 
@@ -581,8 +569,9 @@ if __name__ == '__main__':
                                     # output_file=avgxfm),
                         name='xfmavg_' + snum_txt)
 
-        # FIXME send grid files to the sink; this is dodgy. See earlier comment.
-        workflow.connect(xfmavg, 'output_grid', datasink, 'xfmavg_' + snum_txt)
+
+        if end_stage != 'lin':
+            workflow.connect(nlpfit, 'output_grid', xfmavg, 'input_grid_files')
 
         workflow.connect(modxfm, 'output_xfm', xfmavg, 'input_files') # FIXME check that this works - multiple outputs of MapNode going into single list of xfmavg.
 
@@ -602,9 +591,6 @@ if __name__ == '__main__':
 
         workflow.connect(modxfm, 'output_xfm', xfminvert, 'input_file')
 
-        # FIXME send grid files to the sink; this is dodgy. See earlier comment.
-        workflow.connect(xfminvert, 'output_grid', datasink, 'xfminvert_' + snum_txt)
-
         # concat: invxfm, avgxfm
         merge_xfm = pe.MapNode(
                         interface=utils.Merge(2),
@@ -614,6 +600,15 @@ if __name__ == '__main__':
         workflow.connect(xfminvert, 'output_file', merge_xfm, 'in1')
         workflow.connect(xfmavg,    'output_file', merge_xfm, 'in2')
 
+        # Merge for the grid files of xfminvert and xfmavg; sent to xfmconcat:input_grid_files.
+        merge_xfm_grid_files = pe.MapNode(
+                                    interface=utils.Merge(2),
+                                    name='merge_xfm_grid_files' + snum_txt,
+                                    iterfield=['in1'])
+
+        workflow.connect(xfminvert, 'output_grid', merge_xfm_grid_files, 'in1')
+        workflow.connect(xfmavg,    'output_grid', merge_xfm_grid_files, 'in2')
+
         xfmconcat = pe.MapNode(
                             interface=XfmConcat(),
                                             # input_files=[invxfm, avgxfm],
@@ -621,10 +616,9 @@ if __name__ == '__main__':
                             name='xfmconcat_' + snum_txt,
                             iterfield=['input_files'])
 
-        # FIXME send grid files to the sink; this is dodgy. See earlier comment.
-        workflow.connect(xfmconcat, 'output_grids', datasink, 'xfmconcat_' + snum_txt)
-
         workflow.connect(merge_xfm, 'out', xfmconcat, 'input_files')
+
+        workflow.connect(merge_xfm_grid_files, 'out', xfmconcat, 'input_grid_files')
 
         # resample
         resample = pe.MapNode(
@@ -639,7 +633,8 @@ if __name__ == '__main__':
         # FIXME at this point I believe that resfiles[f] ~= preprocess_normalise output_file
         workflow.connect(preprocess_normalise, 'output_file', resample, 'input_file')
 
-        workflow.connect(xfmconcat,            'output_file', resample, 'transformation')
+        workflow.connect(xfmconcat, 'output_file',  resample, 'transformation')
+        workflow.connect(xfmconcat, 'output_grids', resample, 'input_grid_files')
 
         workflow.connect(voliso,               'output_file', resample, 'like') # FIXME Double-check that ```isomodel_base + ".mnc"``` comes from voliso.
 
@@ -706,9 +701,6 @@ if __name__ == '__main__':
                                                     # output_file=stage_model),
                                     name='volsymm_on_short_' + snum_txt)
 
-            # FIXME send grid files to the sink; this is dodgy. See earlier comment.
-            workflow.connect(volsymm_on_short, 'output_grid', datasink, 'volsymm_on_short_' + snum_txt)
-
             workflow.connect(resample_to_short, 'output_file', volsymm_on_short, 'input_file')
 
             # set up fit args
@@ -759,9 +751,6 @@ if __name__ == '__main__':
                                                                 # trans_file=symxfm, # FIXME This is an output!
                                                                 # output_file=opt['output_stdev']),
                                                 name='volsymm_final_model_' + snum_txt)
-
-                    # FIXME send grid files to the sink; this is dodgy. See earlier comment.
-                    workflow.connect(volsymm_final_model, 'output_grid', datasink, 'volsymm_final_model_' + snum_txt)
 
                     workflow.connect(bigaverage,        'sd_file',      volsymm_final_model, 'input_file')
                     workflow.connect(volsymm_on_short,  'trans_file',   volsymm_final_model, 'trans_file')
