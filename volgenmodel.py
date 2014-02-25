@@ -533,10 +533,6 @@ if __name__ == '__main__':
                 write_conf.inputs.conf       = conf
                 write_conf.inputs.end_stage  = end_stage
 
-                print 'ZZZ', snum, end_stage, write_conf.inputs.snum, write_conf.inputs.end_stage
-
-                workflow.connect(write_conf, 'conf_fname', datasink, 'FIXME_write_conf_' + snum_txt)
-
         # register each file in the input series
         if end_stage == 'lin':
             assert opt['linmethod'] == 'bestlinreg'
