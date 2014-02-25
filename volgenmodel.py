@@ -515,8 +515,8 @@ if __name__ == '__main__':
                                 name='register_' + snum_txt,
                                 iterfield=['target'])
 
-            workflow.connect(voliso,            'output_file', bestlinreg, 'source') # FIXME Double-check that ```isomodel_base + ".mnc"``` comes from voliso.
-            workflow.connect(preprocess_voliso, 'output_file', bestlinreg, 'target') # FIXME Make sure that fitfiles[f] is preprocess_voliso at this point in the program.
+            workflow.connect(voliso,            'output_file', bestlinreg, 'source')
+            workflow.connect(preprocess_voliso, 'output_file', bestlinreg, 'target')
 
             if snum == lastlin:
                 last_linear_stage_xfm_node = bestlinreg
@@ -555,7 +555,7 @@ if __name__ == '__main__':
 
             workflow.connect(xfmconcat,         'output_file', nlpfit, 'init_xfm')
             workflow.connect(mincmath,          'output_file', nlpfit, 'source_mask')
-            workflow.connect(voliso,            'output_file', nlpfit, 'source') # FIXME Double-check that ```isomodel_base + ".mnc"``` comes from voliso.
+            workflow.connect(voliso,            'output_file', nlpfit, 'source')
             workflow.connect(preprocess_voliso, 'output_file', nlpfit, 'target') # FIXME Make sure that fitfiles[f] is preprocess_voliso at this point in the program.
 
             workflow.connect(xfmconcat, 'output_grids', nlpfit, 'input_grid_files')
@@ -630,13 +630,12 @@ if __name__ == '__main__':
                             name='resample_' + snum_txt,
                             iterfield=['input_file', 'transformation'])
 
-        # FIXME at this point I believe that resfiles[f] ~= preprocess_normalise output_file
         workflow.connect(preprocess_normalise, 'output_file', resample, 'input_file')
 
         workflow.connect(xfmconcat, 'output_file',  resample, 'transformation')
         workflow.connect(xfmconcat, 'output_grids', resample, 'input_grid_files')
 
-        workflow.connect(voliso,               'output_file', resample, 'like') # FIXME Double-check that ```isomodel_base + ".mnc"``` comes from voliso.
+        workflow.connect(voliso,               'output_file', resample, 'like')
 
         if opt['check']:
             pik_check_resample = pe.MapNode(

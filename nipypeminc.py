@@ -147,7 +147,6 @@ def aggregate_filename(files, new_suffix):
     names           = [os.path.splitext(os.path.split(x)[1])[0] for x in files]
     common_prefix   = os.path.commonprefix(names)
 
-    # FIXME use cwd instead, also allow passing this in?
     path = os.getcwd()
 
     if common_prefix == '':
@@ -1844,7 +1843,7 @@ class ResampleInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-1,)
 
-    # FIXME This is a dummy input...
+    # This is a dummy input.
     input_grid_files = InputMultiPath(
                         traits.File,
                         desc='input grid file(s)',)
@@ -2543,7 +2542,7 @@ class XfmConcatInputSpec(CommandLineInputSpec):
                         argstr='%s',
                         position=-2)
 
-    # FIXME This is a dummy input...
+    # This is a dummy input.
     input_grid_files = InputMultiPath(
                         traits.File,
                         desc='input grid file(s)',)
@@ -2704,7 +2703,7 @@ class NlpFitInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-1,)
 
-    # FIXME This is a dummy input...
+    # This is a dummy input.
     input_grid_files = InputMultiPath(
                         traits.File,
                         desc='input grid file(s)',)
@@ -2784,7 +2783,7 @@ class XfmAvgInputSpec(CommandLineInputSpec):
                         argstr='%s',
                         position=-2)
 
-    # FIXME This is a dummy input...
+    # This is a dummy input.
     input_grid_files = InputMultiPath(
                         traits.File,
                         desc='input grid file(s)',)
