@@ -3040,6 +3040,11 @@ class VolSymmInputSpec(CommandLineInputSpec):
                     argstr='%s',
                     position=-1,)
 
+    # This is a dummy input.
+    input_grid_files = InputMultiPath(
+                        traits.File,
+                        desc='input grid file(s)',)
+
     verbose = traits.Bool(desc='Print out log messages. Default: False.', argstr='-verbose')
     clobber = traits.Bool(desc='Overwrite existing file.', argstr='-clobber', usedefault=True, default_value=True)
 

@@ -736,8 +736,6 @@ if __name__ == '__main__':
                                                     # output_file=stage_model),
                                     name='volsymm_on_short_' + snum_txt)
 
-            workflow.connect(volsymm_on_short, 'output_grid', datasink, 'volsymm_on_short_' + snum_txt) # 00ch
-
             workflow.connect(resample_to_short, 'output_file', volsymm_on_short, 'input_file')
 
             # set up fit args
@@ -792,6 +790,7 @@ if __name__ == '__main__':
 
                     workflow.connect(bigaverage,        'sd_file',      volsymm_final_model, 'input_file')
                     workflow.connect(volsymm_on_short,  'trans_file',   volsymm_final_model, 'trans_file')
+                    workflow.connect(volsymm_on_short,  'output_grid',  volsymm_final_model, 'input_grid_files')
                     workflow.connect(volsymm_final_model, 'output_file', datasink, 'stdev') # FIXME we ignore opt['output_stdev']
                 else:
                     # do_cmd('cp -f %s %s' % (istdfile, opt['output_stdev'],))
@@ -799,4 +798,4 @@ if __name__ == '__main__':
 
         cmodel = stage_model
 
-    workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 8})
+    # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 8})
