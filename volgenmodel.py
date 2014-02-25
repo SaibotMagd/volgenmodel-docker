@@ -631,14 +631,20 @@ if __name__ == '__main__':
         workflow.connect(xfminvert, 'output_file', merge_xfm, 'in1')
         workflow.connect(xfmavg,    'output_file', merge_xfm, 'in2')
 
-        # Merge for the grid files of xfminvert and xfmavg; sent to xfmconcat:input_grid_files.
-        # merge_xfm_grid_files = pe.Node(
-        #                             interface=utils.Merge(2),
-        #                             name='merge_xfm_grid_files' + snum_txt)
-        #                             # iterfield=['in1'])
+        # Collect grid files of xfminvert and xvmavg. This is in two steps.
+        #
+        # 1. Merge MapNode results.
+        merge_xfm_mapnode_result = pe.Node(
+                            interface=utils.Merge(1),
+                            name='merge_xfm_mapnode_result_' + snum_txt)
+        workflow.connect(xfminvert, 'output_grid', merge_xfm_mapnode_result, 'in1')
 
-        # workflow.connect(xfminvert, 'output_grid', merge_xfm_grid_files, 'in1') # 00ch
-        # workflow.connect(xfmavg,    'output_grid', merge_xfm_grid_files, 'in2') # 00ch
+        # 2. Merge xfmavg's single output with the result from step 1.
+        merge_xfmavg_and_step1 = pe.Node(
+                        interface=utils.Merge(2),
+                        name='merge_xfmavg_and_step1' + snum_txt)
+        workflow.connect(merge_xfm_mapnode_result,  'out',         merge_xfmavg_and_step1, 'in1')
+        workflow.connect(xfmavg,                    'output_grid', merge_xfmavg_and_step1, 'in2')
 
         xfmconcat = pe.MapNode(
                             interface=XfmConcat(),
@@ -649,11 +655,7 @@ if __name__ == '__main__':
 
         workflow.connect(merge_xfm, 'out', xfmconcat, 'input_files')
 
-        # workflow.connect(merge_xfm_grid_files, 'out', xfmconcat, 'input_grid_files') # 00ch
-
-        # FIXME This is just for testing, something's iffy with the merge_xfm_grid_files node.
-        workflow.connect(xfminvert, 'output_grid', datasink, 'xfminvert_grid_file_' + snum_txt) # 00ch
-        workflow.connect(xfmavg,    'output_grid', datasink, 'xfmavg_' + snum_txt) # 00ch
+        workflow.connect(merge_xfmavg_and_step1, 'out', xfmconcat, 'input_grid_files')
 
         # resample
         resample = pe.MapNode(
@@ -668,7 +670,6 @@ if __name__ == '__main__':
         workflow.connect(preprocess_normalise, 'output_file', resample, 'input_file')
 
         workflow.connect(xfmconcat, 'output_file',  resample, 'transformation')
-        # workflow.connect(xfmconcat, 'output_grids', resample, 'input_grid_files') # 00ch
 
         workflow.connect(voliso,               'output_file', resample, 'like')
 
