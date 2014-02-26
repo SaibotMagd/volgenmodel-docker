@@ -15,6 +15,7 @@ Then:
 
     git clone https://github.com/carlohamalainen/volgenmodel-nipype
     cd volgenmodel-nipype
+    export PYTHONPATH=`pwd`
 
 Load the ```volgenmodel.py``` script using IPython or similar, being sure to
 tweak ```FAST_EXAMPLE_BASE_DIR``` to something appropriate. Then

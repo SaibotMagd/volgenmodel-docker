@@ -45,8 +45,6 @@ def load_pklz(f):
     return pickle.load(gzip.open(f))
 
 def _calc_threshold_blur_preprocess(input_file):
-    import sys
-    sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
     from volgenmodel import get_step_sizes
     (step_x, step_y, step_z) = get_step_sizes(input_file)
     return abs(step_x + step_y + step_z)
@@ -58,8 +56,6 @@ calc_threshold_blur_preprocess = utils.Function(
 
 
 def _calc_initial_model_fwhm3d(input_file):
-    import sys
-    sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
     from volgenmodel import get_step_sizes
     (xstep, ystep, zstep) = get_step_sizes(input_file)
     return (abs(xstep*4), abs(ystep*4), abs(zstep*4))
@@ -76,9 +72,6 @@ def _write_stage_conf_file(snum, snum_txt, conf, end_stage):
     assert end_stage is not None
 
     import os.path
-    import sys
-
-    sys.path.append('/home/carlo/work/github/volgenmodel-nipype') # FIXME how to generalise this?
     from volgenmodel import to_perl_syntax
 
     conf_fname = os.path.join(os.getcwd(), "fit_stage_%02d.conf" % snum)
@@ -798,4 +791,4 @@ if __name__ == '__main__':
 
         cmodel = stage_model
 
-    # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 8})
+    # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 4})
