@@ -134,12 +134,14 @@ def aggregate_filename(files, new_suffix):
     Examples
     --------
 
-    >>> import nipype.interfaces.minc as minc
-    >>> minc.utils.aggregate_filename(['/tmp/foo1.mnc', '/tmp/foo2.mnc', '/tmp/foo3.mnc'], 'averaged')
-    '/tmp/foo_averaged.mnc'
+    >>> from nipypeminc import aggregate_filename
+    >>> f = aggregate_filename(['/tmp/foo1.mnc', '/tmp/foo2.mnc', '/tmp/foo3.mnc'], 'averaged')
+    >>> os.path.split(f)[1] # This has a full path, so just check the filename.
+    'foo_averaged.mnc'
 
-    >>> minc.utils.aggregate_filename(['/tmp/foo1.mnc', '/tmp/blah1.mnc'], 'averaged')
-    '/tmp/foo1_averaged.mnc'
+    >>> f = aggregate_filename(['/tmp/foo1.mnc', '/tmp/blah1.mnc'], 'averaged')
+    >>> os.path.split(f)[1] # This has a full path, so just check the filename.
+    'foo1_averaged.mnc'
 
     """
 
@@ -294,8 +296,8 @@ class Extract(StdOutCommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Extract
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import Extract
+    >>> from testing import minc2Dfile
 
     >>> extract = Extract(input_file=minc2Dfile)
     >>> extract.run() # doctest: +SKIP
@@ -411,8 +413,8 @@ class ToRaw(StdOutCommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import ToRaw
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import ToRaw
+    >>> from testing import minc2Dfile
 
     >>> toraw = ToRaw(input_file=minc2Dfile)
     >>> toraw.run() # doctest: +SKIP
@@ -484,8 +486,8 @@ class Convert(CommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Convert
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import Convert
+    >>> from testing import minc2Dfile
     >>> c = Convert(input_file=minc2Dfile, output_file='/tmp/out.mnc', two=True) # Convert to MINC2 format.
     >>> c.run() # doctest: +SKIP
     """
@@ -635,8 +637,8 @@ class ToEcat(CommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import ToEcat
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import ToEcat
+    >>> from testing import minc2Dfile
 
     >>> c = ToEcat(input_file=minc2Dfile)
     >>> c.run() # doctest: +SKIP
@@ -736,8 +738,8 @@ class Dump(StdOutCommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Dump
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import Dump
+    >>> from testing import minc2Dfile
 
     >>> dump = Dump(input_file=minc2Dfile)
     >>> dump.run() # doctest: +SKIP
@@ -882,8 +884,8 @@ class Average(CommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Average
-    >>> from nipype.testing import nonempty_minc_data
+    >>> from nipypeminc import Average
+    >>> from testing import nonempty_minc_data
 
     >>> files = [nonempty_minc_data(i) for i in range(3)]
     >>> average = Average(input_files=files, output_file='/tmp/tmp.mnc')
@@ -942,8 +944,8 @@ class Blob(CommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Blob
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import Blob
+    >>> from testing import minc2Dfile
 
     >>> blob = Blob(input_file=minc2Dfile, output_file='/tmp/tmp.mnc', trace=True)
     >>> blob.run() # doctest: +SKIP
@@ -1070,8 +1072,8 @@ class Calc(CommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Calc
-    >>> from nipype.testing import nonempty_minc_data
+    >>> from nipypeminc import Calc
+    >>> from testing import nonempty_minc_data
 
     >>> file0 = nonempty_minc_data(0)
     >>> file1 = nonempty_minc_data(1)
@@ -1478,8 +1480,8 @@ class Blur(StdOutCommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Blur
-    >>> from nipype.testing import minc3Dfile
+    >>> from nipypeminc import Blur
+    >>> from testing import minc3Dfile
 
     (1) Blur  an  input  volume with a 6mm fwhm isotropic Gaussian
     blurring kernel:
@@ -1723,8 +1725,8 @@ class Math(StdOutCommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Math
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import Math
+    >>> from testing import minc2Dfile
 
     Scale: volume*3.0 + 2:
 
@@ -2098,8 +2100,8 @@ class Resample(StdOutCommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Resample
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import Resample
+    >>> from testing import minc2Dfile
     >>> r = Resample(input_file=minc2Dfile, output_file='/tmp/out.mnc') # Resample the file.
     >>> r.run() # doctest: +SKIP
 
@@ -2199,8 +2201,8 @@ class Norm(CommandLine):
     Examples
     --------
 
-    >>> from nipype.interfaces.minc import Norm
-    >>> from nipype.testing import minc2Dfile
+    >>> from nipypeminc import Norm
+    >>> from testing import minc2Dfile
     >>> n = Norm(input_file=minc2Dfile, output_file='/tmp/out.mnc') # Normalise the file.
     >>> n.run() # doctest: +SKIP
     """
