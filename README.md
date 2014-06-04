@@ -6,10 +6,10 @@ Port of volgenmodel to Nipype along with interfaces for a number of Minc tools.
 
 Prerequisites:
 
-* https://github.com/nipy/nipype
+* https://github.com/BIC-MNI/minc-toolkit
 * https://github.com/BIC-MNI/minc-widgets
-* bestlinreg
-* minccomplete
+* https://github.com/nipy/nipype
+* bestlinreg and minccomplete (included in [extra-scripts](extra-scripts)).
 
 Then:
 
