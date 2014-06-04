@@ -55,3 +55,7 @@ Should say something like:
     51 tests in 170 items.
     51 passed and 0 failed.
     Test passed.
+
+# Vagrant/Puppet
+
+Vagrant/Puppet scripts are here: [vagrant-puppet](vagrant-puppet).
