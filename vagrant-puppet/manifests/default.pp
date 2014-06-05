@@ -113,3 +113,10 @@ file_line { 'PATH for volgenmodel-nipype':
     path        => '/etc/bash.bashrc',
     line        => 'export PATH=$PATH:/opt/code/volgenmodel-nipype/extra-scripts',
 }
+
+file_line { 'PERL5LIB for minc widgets':
+    require     => Vcsrepo['/opt/code/minc-widgets'],
+
+    path        => '/etc/bash.bashrc',
+    line        => 'export PERL5LIB=/usr/local/perl',
+}
