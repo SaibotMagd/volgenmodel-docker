@@ -83,9 +83,11 @@ vcsrepo { '/opt/code/minc-widgets':
   require  => Exec['compile minc-tools'],
 }
 
-exec { 'tweak PATH for minc-widgets':
+file_line { 'PATH for minc-widgets':
     require     => Vcsrepo['/opt/code/minc-widgets'],
-    command     => "/bin/echo 'export PATH=$PATH:/opt/code/minc-widgets/gennlxfm:/opt/code/minc-widgets/mincbigaverage:/opt/code/minc-widgets/mincnorm:/opt/code/minc-widgets/nlpfit:/opt/code/minc-widgets/volalign:/opt/code/minc-widgets/volcentre:/opt/code/minc-widgets/volextents:/opt/code/minc-widgets/volflip:/opt/code/minc-widgets/voliso:/opt/code/minc-widgets/volpad:/opt/code/minc-widgets/volsymm:/opt/code/minc-widgets/xfmavg:/opt/code/minc-widgets/xfmflip' >> /etc/bash.bashrc",
+
+    path        => '/etc/bash.bashrc',
+    line        => 'export PATH=$PATH:/opt/code/minc-widgets/gennlxfm:/opt/code/minc-widgets/mincbigaverage:/opt/code/minc-widgets/mincnorm:/opt/code/minc-widgets/nlpfit:/opt/code/minc-widgets/volalign:/opt/code/minc-widgets/volcentre:/opt/code/minc-widgets/volextents:/opt/code/minc-widgets/volflip:/opt/code/minc-widgets/voliso:/opt/code/minc-widgets/volpad:/opt/code/minc-widgets/volsymm:/opt/code/minc-widgets/xfmavg:/opt/code/minc-widgets/xfmflip',
 }
 
 # volgenmodel-nipype
@@ -97,8 +99,16 @@ vcsrepo { '/opt/code/volgenmodel-nipype':
     require  => Exec['install nipype']
 }
 
-exec { 'tweak PYTHONPATH and PATH for volgenmodel-nipype':
+file_line { 'PYTHONPATH for volgenmodel-nipype':
     require     => Vcsrepo['/opt/code/volgenmodel-nipype'],
-    command     => "/bin/echo 'export PYTHONPATH=/opt/code/volgenmodel-nipype' >> /etc/bash.bashrc; /bin/echo 'export PATH=$PATH:/opt/code/volgenmodel-nipype/extra-scripts' >> /etc/bash.bashrc",
-    cwd         => '/opt/code/nipype',
+
+    path        => '/etc/bash.bashrc',
+    line        => 'export PYTHONPATH=/opt/code/volgenmodel-nipype',
+}
+
+file_line { 'PATH for volgenmodel-nipype':
+    require     => Vcsrepo['/opt/code/volgenmodel-nipype'],
+
+    path        => '/etc/bash.bashrc',
+    line        => 'export PATH=$PATH:/opt/code/volgenmodel-nipype/extra-scripts',
 }
