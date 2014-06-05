@@ -11,6 +11,7 @@ package { 'python-nose':        ensure => 'installed' }
 # For some of the minc-widgets tools:
 package { 'libgetopt-tabular-perl': ensure => 'installed' }
 package { 'imagemagick':            ensure => 'installed' }
+package { 'octave':                 ensure => 'installed' }
 
 $handy_packages = [ 'ipython', 'htop', 'screen' ]
 package { $handy_packages: ensure => 'installed' }
