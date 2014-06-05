@@ -27,19 +27,19 @@ Files that you'll need:
     vagrant@vagrant:/scratch/fast-example$ ls -lh
     total 5.7M
     -rw-r--r-- 1 vagrant vagrant  440 Jun  5 08:12 fit.10-genmodel.conf
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml01_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml02_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml03_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml04_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml05_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml06_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml07_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml08_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml09_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml10_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml11_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml12_lowres.mnc
-    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml13_lowres.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml01.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml02.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml03.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml04.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml05.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml06.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml07.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml08.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml09.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml10.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml11.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml12.mnc
+    -rw-r--r-- 1 vagrant vagrant 439K Jun  5 08:12 sml13.mnc
 
 Note that ```/opt/code/volgenmodel-nipype/volgenmodel.py``` has the directory ```/scratch/fast-example``` hardcoded.
 
