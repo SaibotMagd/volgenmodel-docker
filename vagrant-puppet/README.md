@@ -43,14 +43,15 @@ Files that you'll need:
 
 Note that ```/opt/code/volgenmodel-nipype/volgenmodel.py``` has the directory ```/scratch/fast-example``` hardcoded.
 
-Run volgenmodel:
+Pop into the right directory and load ipython:
 
     cd /scratch/fast-example
-
     ipython
 
-        %run /opt/code/volgenmodel-nipype/volgenmodel.py
-        workflow.run()
+In ipython, load the volgenmodel code (which creates the workflow) and then run the workflow:
+
+    %run /opt/code/volgenmodel-nipype/volgenmodel.py
+    workflow.run()
 
 # Notes
 
