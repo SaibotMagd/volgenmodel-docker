@@ -3,7 +3,7 @@
 To build a VM using Vagrant and Puppet:
 
     git clone https://github.com/carlohamalainen/volgenmodel-nipype
-    cd volgenmodel-nipype/vagrant
+    cd volgenmodel-nipype/vagrant-puppet
     vagrant box add debian80 http://carlo-hamalainen.net/vagrant/debian-jessie-minimal-2014-06-04.box
     vagrant up # This takes about 20 minutes to run.
     vagrant ssh
