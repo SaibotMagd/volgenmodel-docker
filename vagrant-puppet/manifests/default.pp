@@ -8,6 +8,10 @@ package { 'python-dev':         ensure => 'installed' }
 package { 'python-networkx':    ensure => 'installed' }
 package { 'python-nose':        ensure => 'installed' }
 
+# For some of the minc-widgets tools:
+package { 'libgetopt-tabular-perl': ensure => 'install' }
+package { 'imagemagick':            ensure => 'install' }
+
 $handy_packages = [ 'ipython', 'htop', 'screen' ]
 package { $handy_packages: ensure => 'installed' }
 
@@ -81,7 +85,7 @@ vcsrepo { '/opt/code/minc-widgets':
 
 exec { 'tweak PATH for minc-widgets':
     require     => Vcsrepo['/opt/code/minc-widgets'],
-    command     => '/bin/echo "export PATH=$PATH:/opt/code/minc-widgets/gennlxfm:/opt/code/minc-widgets/mincbigaverage:/opt/code/minc-widgets/mincnorm:/opt/code/minc-widgets/nlpfit:/opt/code/minc-widgets/volalign:/opt/code/minc-widgets/volcentre:/opt/code/minc-widgets/volextents:/opt/code/minc-widgets/volflip:/opt/code/minc-widgets/voliso:/opt/code/minc-widgets/volpad:/opt/code/minc-widgets/volsymm:/opt/code/minc-widgets/xfmavg:/opt/code/minc-widgets/xfmflip" >> /etc/bash.bashrc',
+    command     => "/bin/echo 'export PATH=$PATH:/opt/code/minc-widgets/gennlxfm:/opt/code/minc-widgets/mincbigaverage:/opt/code/minc-widgets/mincnorm:/opt/code/minc-widgets/nlpfit:/opt/code/minc-widgets/volalign:/opt/code/minc-widgets/volcentre:/opt/code/minc-widgets/volextents:/opt/code/minc-widgets/volflip:/opt/code/minc-widgets/voliso:/opt/code/minc-widgets/volpad:/opt/code/minc-widgets/volsymm:/opt/code/minc-widgets/xfmavg:/opt/code/minc-widgets/xfmflip' >> /etc/bash.bashrc",
 }
 
 # volgenmodel-nipype
@@ -95,6 +99,6 @@ vcsrepo { '/opt/code/volgenmodel-nipype':
 
 exec { 'tweak PYTHONPATH and PATH for volgenmodel-nipype':
     require     => Vcsrepo['/opt/code/volgenmodel-nipype'],
-    command     => '/bin/echo "export PYTHONPATH=/opt/code/volgenmodel-nipype" >> /etc/bash.bashrc; /bin/echo "export PATH=$PATH:/opt/code/volgenmodel-nipype/extra-scripts" >> /etc/bash.bashrc',
+    command     => "/bin/echo 'export PYTHONPATH=/opt/code/volgenmodel-nipype' >> /etc/bash.bashrc; /bin/echo 'export PATH=$PATH:/opt/code/volgenmodel-nipype/extra-scripts' >> /etc/bash.bashrc",
     cwd         => '/opt/code/nipype',
 }
