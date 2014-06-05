@@ -9,8 +9,8 @@ package { 'python-networkx':    ensure => 'installed' }
 package { 'python-nose':        ensure => 'installed' }
 
 # For some of the minc-widgets tools:
-package { 'libgetopt-tabular-perl': ensure => 'install' }
-package { 'imagemagick':            ensure => 'install' }
+package { 'libgetopt-tabular-perl': ensure => 'installed' }
+package { 'imagemagick':            ensure => 'installed' }
 
 $handy_packages = [ 'ipython', 'htop', 'screen' ]
 package { $handy_packages: ensure => 'installed' }
