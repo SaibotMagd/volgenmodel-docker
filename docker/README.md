@@ -16,8 +16,12 @@ https://coderwall.com/p/wlhavw
 
 Load the image:
 
-    # wget FIXME/volgenmodel-nipype-docker-2014-06-12.tar
+    # wget http://carlo-hamalainen.net/docker/volgenmodel-nipype-docker-2014-06-12.tar
     # docker load < volgenmodel-nipype-docker-2014-06-12.tar
+
+or maybe:
+
+    # wget -O- http://carlo-hamalainen.net/docker/volgenmodel-nipype-docker-2014-06-12.tar | docker load
 
 Check that it's there:
 
@@ -49,10 +53,6 @@ e.g.
     object?   -> Details about 'object', use 'object??' for extra details.
 
     In [1]: %run /opt/code/volgenmodel-nipype/nipypeminc.py
-
-# Manually build the image
-
-This is what I did to build the volgenmodel-nipype image.
 
 ## Build the volgenmodel image
 
