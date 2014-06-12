@@ -16,7 +16,9 @@ https://coderwall.com/p/wlhavw
 
 Build the image, tagging it with a description:
 
-    wget FIXME -- url to Docker file
+    mkdir tmp
+    cd tmp
+    wget https://raw.githubusercontent.com/carlohamalainen/volgenmodel-nipype/master/docker/Dockerfile
     docker build -t="ouruser/volgenmodel:v1" . # note the trailing dot
 
 Look at the images. The top one is the one with all of our changes.
@@ -43,11 +45,19 @@ Look at the images. The top one is the one with all of our changes.
 
 ## Start a container
 
-Run ```bash``` in the container:
+Run it in the background so we can ssh in:
 
-    docker run -t -i ouruser/volgenmodel:v1 /bin/bash
-    root@4880af4cb8f1:/# ls /opt/code
-    minc-toolkit  minc-widgets  nipype  pyminc  volgenmodel-nipype
+    docker run -d -P --name volgenmodel1 ouruser/volgenmodel:v1
+
+See it running:
+
+    # docker ps
+    CONTAINER ID        IMAGE                    COMMAND             CREATED             STATUS              PORTS                   NAMES
+    3e99e883f050        ouruser/volgenmodel:v1   /usr/sbin/sshd -D   11 seconds ago      Up 10 seconds       0.0.0.0:49153->22/tcp   volgenmodel1
+
+Ssh in using the port mentioned:
+
+    ssh -p 49153 root@localhost   # password is set in the Dockerfile
 
 ## Manually compile tools
 
@@ -88,4 +98,14 @@ To delete all containers:
 To delete all images:
 
     docker rmi `docker images -q`
+
+
+## Temp stuff
+
+Run ```bash``` in the container:
+
+    docker run -t -i ouruser/volgenmodel:v1 /bin/bash
+    root@4880af4cb8f1:/# ls /opt/code
+    minc-toolkit  minc-widgets  nipype  pyminc  volgenmodel-nipype
+
 
