@@ -17,11 +17,11 @@ https://coderwall.com/p/wlhavw
 Build the image, tagging it with a description:
 
     wget FIXME -- url to Docker file
-    sudo docker build -t="ouruser/volgenmodel:v1" . # note the trailing dot
+    docker build -t="ouruser/volgenmodel:v1" . # note the trailing dot
 
 Look at the images. The top one is the one with all of our changes.
 
-    $ sudo docker images
+    $ docker images
     REPOSITORY            TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
     ouruser/volgenmodel   v1                  d2c3c059eb23        39 seconds ago      1.217 GB
     debian                rc-buggy            350a74df81b1        6 days ago          159.9 MB
@@ -45,7 +45,7 @@ Look at the images. The top one is the one with all of our changes.
 
 Run ```bash``` in the container:
 
-    sudo docker run -t -i ouruser/volgenmodel:v1 /bin/bash
+    docker run -t -i ouruser/volgenmodel:v1 /bin/bash
     root@4880af4cb8f1:/# ls /opt/code
     minc-toolkit  minc-widgets  nipype  pyminc  volgenmodel-nipype
 
@@ -77,4 +77,15 @@ Append to ```/etc/bash.bashrc```:
     export PYTHONPATH=/opt/code/volgenmodel-nipype
     export PATH=$PATH:/opt/code/volgenmodel-nipype/extra-scripts
     export PERL5LIB=/usr/local/perl
+
+
+## Tidying up
+
+To delete all containers:
+
+    docker ps -a | awk '{print $1}' | grep -v CONTAINER | xargs -n 1 docker rm
+
+To delete all images:
+
+    docker rmi `docker images -q`
 

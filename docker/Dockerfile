@@ -14,3 +14,10 @@ RUN git clone https://github.com/mcvaneede/pyminc.git                   /opt/cod
 RUN git clone https://github.com/nipy/nipype.git                        /opt/code/nipype
 RUN git clone https://github.com/BIC-MNI/minc-widgets.git               /opt/code/minc-widgets
 RUN git clone https://github.com/carlohamalainen/volgenmodel-nipype.git /opt/code/volgenmodel-nipype
+
+# http://docs.docker.com/examples/running_ssh_service/
+RUN apt-get install -y openssh-server
+RUN mkdir /var/run/sshd
+RUN echo 'root:screencast' |chpasswd
+EXPOSE 22
+CMD    ["/usr/sbin/sshd", "-D"]
