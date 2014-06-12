@@ -12,7 +12,7 @@ https://coderwall.com/p/wlhavw
     sudo apt-get update
     sudo apt-get install -y lxc-docker
 
-## Load the prebuild volgenmodel-nipype image
+## Load the prebuilt volgenmodel-nipype image
 
 Load the image:
 
