@@ -12,6 +12,38 @@ https://coderwall.com/p/wlhavw
     sudo apt-get update
     sudo apt-get install -y lxc-docker
 
+## Load the prebuild volgenmodel-nipype image
+
+Load the image:
+
+    wget FIXME/volgenmodel_with_tools_installed.tar
+    docker load < volgenmodel_with_tools_installed.tar
+
+Check that it's there:
+
+    root@x1:~# docker images
+    REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+    <none>              <none>              3b4656976293        56 minutes ago      1.226 GB
+
+Give it a nicer name:
+
+    root@x1:~# docker tag 3b4656976293 volgenmodel-nipype
+    root@x1:~# docker images
+    REPOSITORY           TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+    volgenmodel-nipype   latest              3b4656976293        57 minutes ago      1.226 GB
+
+Run ```bash``` in the container and look around:
+
+    docker run -t -i volgenmodel-nipype /bin/bash
+    root@4880af4cb8f1:/# ls /opt/code
+    minc-toolkit  minc-widgets  nipype  pyminc  volgenmodel-nipype
+
+
+
+# Manually build the image
+
+This is what I did to build the volgenmodel-nipype image.
+
 ## Build the volgenmodel image
 
 Build the image, tagging it with a description:
@@ -21,7 +53,7 @@ Build the image, tagging it with a description:
     wget https://raw.githubusercontent.com/carlohamalainen/volgenmodel-nipype/master/docker/Dockerfile
     docker build -t="ouruser/volgenmodel:v1" . # note the trailing dot
 
-Look at the images. The top one is the one with all of our changes.
+Look at the images. We get all the cumulative history of this image:
 
     $ docker images
     REPOSITORY            TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
@@ -88,6 +120,19 @@ Append to ```/etc/bash.bashrc```:
     export PATH=$PATH:/opt/code/volgenmodel-nipype/extra-scripts
     export PERL5LIB=/usr/local/perl
 
+## Stop the container and commit it (make a new image):
+
+    docker stop volgenmodel1
+
+## Save to a file:
+
+    docker images # note the image ID
+    docker save 3b4656976293 > volgenmodel_with_tools_installed.tar
+
+There's the file:
+
+    root@x1:~# ls -lh volgenmodel_with_tools_installed.tar
+    -rw-r--r-- 1 root root 1.2G Jun 12 11:48 volgenmodel_with_tools_installed.tar
 
 ## Tidying up
 
@@ -98,14 +143,3 @@ To delete all containers:
 To delete all images:
 
     docker rmi `docker images -q`
-
-
-## Temp stuff
-
-Run ```bash``` in the container:
-
-    docker run -t -i ouruser/volgenmodel:v1 /bin/bash
-    root@4880af4cb8f1:/# ls /opt/code
-    minc-toolkit  minc-widgets  nipype  pyminc  volgenmodel-nipype
-
-
