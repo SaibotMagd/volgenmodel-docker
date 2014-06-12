@@ -2,7 +2,7 @@ FROM debian
 MAINTAINER Carlo Hamalainen <carlo@carlo-hamalainen.net>
 
 RUN apt-get -qq update
-RUN apt-get -qqy install python-pip python-numpy python-dev python-networkx python-nose libgetopt-tabular-perl imagemagick octave ipython htop screen git cmake cmake-curses-gui build-essential g++ bison flex freeglut3 freeglut3-dev libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers wget
+RUN apt-get -qqy install python-pip python-numpy python-dev python-networkx python-nose libgetopt-tabular-perl imagemagick octave ipython htop screen git cmake cmake-curses-gui build-essential g++ bison flex freeglut3 freeglut3-dev libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers wget vim
 
 RUN /usr/bin/pip install nibabel
 RUN /usr/bin/pip install traits traitsui
