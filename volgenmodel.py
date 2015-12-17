@@ -16,7 +16,7 @@ import nipype.interfaces.io as nio
 import nipype.interfaces.utility as utils
 from copy import deepcopy
 
-from nipypeminc import  \
+from nipype.interfaces.minc import  \
         Volcentre,      \
         Norm,           \
         Volpad,         \
