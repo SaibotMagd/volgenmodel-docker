@@ -4,18 +4,53 @@ Port of volgenmodel to Nipype along with interfaces for a number of Minc tools.
 
 # Install
 
-Prerequisites:
+## Prerequisites
 
-* https://github.com/BIC-MNI/minc-toolkit
-* https://github.com/BIC-MNI/minc-widgets
-* https://github.com/nipy/nipype
-* bestlinreg and minccomplete (included in [extra-scripts](extra-scripts)).
+### minc-toolkit / minc-widgets
+
+On Debian/Ubuntu systems:
+
+    sudo apt-get install octave cmake cmake-curses-gui \
+                         build-essential g++ \
+                         cmake cmake-curses-gui \
+                         bison flex \
+                         freeglut3 freeglut3-dev \
+                         libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers
+
+Build minc-toolkit from Github:
+
+    git clone --recursive git://github.com/BIC-MNI/minc-toolkit.git minc-toolkit
+    cd minc-toolkit
+    rm -fr build
+    mkdir build
+    cd build
+    cmake -DMT_BUILD_SHARED_LIBS=ON -DMT_BUILD_VISUAL_TOOLS=ON ..
+    make &> make.log   # check the log!
+    sudo make install  # installs to /usr/local
+
+You should also end up with the tools from https://github.com/BIC-MNI/minc-widgets
+
+### nipype
+
+Install the latest from Github:
+
+    git clone https://github.com/nipy/nipype
+    cd nipype
+    sudo python setup.py install
+
+### bestlinreg and minccomplete
+
+The scripts bestlinreg and minccomplete are included in this repository in [extra-scripts](extra-scripts).
+
+# Running
 
 Then:
 
     git clone https://github.com/carlohamalainen/volgenmodel-nipype
     cd volgenmodel-nipype
     export PYTHONPATH=`pwd`
+    export PATH=$PATH:`pwd`/extra-scripts
+    export PERL5LIB=/usr/local/perl  # assuming minc-toolkit is installed in /usr/local
 
 Load the ```volgenmodel.py``` script using IPython or similar, being sure to
 tweak ```FAST_EXAMPLE_BASE_DIR``` to something appropriate. Then
