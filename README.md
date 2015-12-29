@@ -1,6 +1,6 @@
 # volgenmodel-nipype
 
-Port of volgenmodel to Nipype along with interfaces for a number of Minc tools.
+Port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to Nipype along with interfaces for a number of Minc tools.
 
 # Install
 
@@ -66,6 +66,8 @@ runs it on 4 cores.
 The workflow for a small 3-stage model is:
 
 ![workflow fast-example](https://github.com/carlohamalainen/volgenmodel-nipype/raw/master/volgenmodel_graph.png)
+
+The final output is in ```$FAST_EXAMPLE_BASE_DIR/volgenmodel_final_output```.
 
 # Vagrant/Puppet
 
