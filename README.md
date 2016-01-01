@@ -1,6 +1,6 @@
 # volgenmodel-nipype
 
-Port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to Nipype along with interfaces for a number of Minc tools.
+Port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to Nipype. Interfaces to MINC tools that were previously in this repo are now in the master branch of [Nipype](https://github.com/nipy/nipype).
 
 # Install
 
