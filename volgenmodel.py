@@ -152,6 +152,20 @@ def get_step_sizes(mincfile):
 
     return (xstep, ystep, zstep)
 
+def read_conf_array(opt):
+    """
+    Set up the @conf array.
+    """
+
+    if opt['config_file'] is not None:
+        conf = None
+        exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
+        assert conf is not None
+    else:
+        conf = default_conf
+
+    return conf
+
 def make_workflow():
     default_conf = [ {'step': 16, 'blur_fwhm': 16, 'iterations': 4},
                      {'step':  8, 'blur_fwhm':  8, 'iterations': 8},
@@ -258,13 +272,7 @@ def make_workflow():
             print "  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c])
         c += 1
 
-    # set up the @conf array
-    if opt['config_file'] is not None:
-        conf = None
-        exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
-        assert conf is not None
-    else:
-        conf = default_conf
+    conf = read_conf_array(opt)
 
     # sanity check for fit config
     if fit_stages[-1] > (len(conf) - 1):
