@@ -152,8 +152,7 @@ def get_step_sizes(mincfile):
 
     return (xstep, ystep, zstep)
 
-
-if __name__ == '__main__':
+def make_workflow():
     default_conf = [ {'step': 16, 'blur_fwhm': 16, 'iterations': 4},
                      {'step':  8, 'blur_fwhm':  8, 'iterations': 8},
                      {'step':  4, 'blur_fwhm':  4, 'iterations': 8},
@@ -791,4 +790,8 @@ if __name__ == '__main__':
 
         cmodel = stage_model
 
-    # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 4})
+    return workflow
+
+if __name__ == '__main__':
+    workflow = make_workflow()
+    workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 4})
