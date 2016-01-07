@@ -184,16 +184,14 @@ def make_workflow():
 
     workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 
-    infiles = glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'sml*.mnc'))
+    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'mouse*mnc')))
 
-    datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_sml')
+    datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_mouse')
     datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
-    datasource.inputs.template = 'sml*.mnc'
+    datasource.inputs.template = 'mouse*.mnc'
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, 'volgenmodel_final_output'))
-
-    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'sml*mnc')))
 
     opt = { 'verbose': 0,
             'clobber': 0,
