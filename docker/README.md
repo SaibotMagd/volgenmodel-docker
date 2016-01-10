@@ -8,7 +8,7 @@ Clone repositories including the sample mouse brain data:
 
     git clone https://github.com/carlohamalainen/volgenmodel-nipype.git
     cd volgenmodel-nipype/docker
-    https://github.com/carlohamalainen/volgenmodel-fast-example.git # about 96Mb
+    git clone https://github.com/carlohamalainen/volgenmodel-fast-example.git # about 96Mb
 
 Build and run:
 
