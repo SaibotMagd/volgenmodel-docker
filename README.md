@@ -71,4 +71,11 @@ The final output is in ```$FAST_EXAMPLE_BASE_DIR/volgenmodel_final_output```.
 
 # Vagrant/Puppet
 
+(Old, probably doesn't work now.)
+
 Vagrant/Puppet scripts are here: [vagrant-puppet](vagrant-puppet).
+
+# Docker
+
+See [volgenmodel-nipype/docker](docker) for a script to run a sample mouse
+brain workflow.
