@@ -78,4 +78,5 @@ Vagrant/Puppet scripts are here: [vagrant-puppet](vagrant-puppet).
 # Docker
 
 See [volgenmodel-nipype/docker](docker) for a script to run a sample mouse
-brain workflow.
+brain workflow. This uses a sample mouse brain model which is
+available in a separate repository (around 96Mb in size): https://github.com/carlohamalainen/volgenmodel-fast-example.git
