@@ -173,7 +173,7 @@ def make_workflow():
                      {'step':  2, 'blur_fwhm':  2, 'iterations': 4},
                    ]
 
-    FAST_EXAMPLE_BASE_DIR = '/scratch/fast-example'
+    FAST_EXAMPLE_BASE_DIR = '/scratch/volgenmodel-fast-example'
 
     # Top level workflow.
     workflow = pe.Workflow(name="workflow")
@@ -228,7 +228,7 @@ def make_workflow():
     opt['fit_stages'] = 'lin,1,3'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
-    # opt['workdir'] = '/scratch/fast-example/work'
+    # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
     opt['verbose'] = 1
     opt['clobber'] = 1
 

@@ -12,7 +12,7 @@ Clone repositories including the sample mouse brain data:
 
 Build and run:
 
-    ./build.sh && docker run -i -t user/volgenmodel-nipype /bin/bash /opt/go.sh
+    ./build.sh && docker run -i -t carlo/volgenmodel-nipype /bin/bash /opt/go.sh
 
 End of output should look like:
 
