@@ -41,8 +41,22 @@ import glob
 import pickle
 import gzip
 
+
+def IdentityFile(input_file):
+    # Adapted from: http://nipy.org/nipype/users/function_interface.html
+
+    import os
+    import shutil
+
+    output_file = 'IdentityFile_copy' + os.path.splitext(input_file)[1]
+    shutil.copyfile(input_file, output_file)
+
+    return os.path.abspath(output_file)
+
+
 def load_pklz(f):
     return pickle.load(gzip.open(f))
+
 
 def _calc_threshold_blur_preprocess(input_file):
     from volgenmodel import get_step_sizes
@@ -309,8 +323,14 @@ def make_workflow():
 
         # do_cmd('mv -f %s %s' % (nrmfile, resfiles[f],))
     else:
+        preprocess_normalise_id = utils.Function(
+                                            input_names=['input_file'],
+                                            output_names=['output_file'],
+                                            function=IdentityFile,
+                                            )
+
         preprocess_normalise = pe.MapNode(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=preprocess_normalise_id,
                                     name='preprocess_normalise',
                                     iterfield=['input_file'])
 
@@ -327,8 +347,14 @@ def make_workflow():
                                 name='preprocess_volpad',
                                 iterfield=['input_file'])
     else:
+        preprocess_volpad_id = utils.Function(
+                                            input_names=['input_file'],
+                                            output_names=['output_file'],
+                                            function=IdentityFile,
+                                            )
+
         preprocess_volpad = pe.MapNode(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=preprocess_volpad_id,
                                     name='preprocess_volpad',
                                     iterfield=['input_file'])
 
@@ -341,8 +367,14 @@ def make_workflow():
                                     name='preprocess_voliso',
                                     iterfield=['input_file'])
     else:
+        preprocess_voliso_id = utils.Function(
+                                            input_names=['input_file'],
+                                            output_names=['output_file'],
+                                            function=IdentityFile,
+                                            )
+
         preprocess_voliso = pe.MapNode(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=preprocess_voliso_id,
                                     name='preprocess_iso',
                                     iterfield=['input_file'])
 
@@ -357,8 +389,14 @@ def make_workflow():
                                 name='preprocess_pik',
                                 iterfield=['input_file'])
     else:
+        preprocess_pik_id = utils.Function(
+                                    input_names=['input_file'],
+                                    output_names=['output_file'],
+                                    function=IdentityFile,
+                                    )
+
         preprocess_pik = pe.MapNode(
-                                interface=utils.IdentityInterface(fields=['input_file']),
+                                interface=preprocess_pik_id,
                                 name='preprocess_pik',
                                 iterfield=['input_file'])
 
@@ -745,8 +783,14 @@ def make_workflow():
 
         else:
             # do_cmd('ln -s -f %s %s' % (os.path.basename(iavgfile), stage_model,))
+            volsymm_on_short_id = utils.Function(
+                                    input_names=['input_file'],
+                                    output_names=['output_file'],
+                                    function=IdentityFile,
+                                    )
+
             volsymm_on_short = pe.Node(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=volsymm_on_short_id,
                                     name='volsymm_on_short_' + snum_txt)
 
             workflow.connect(bigaverage, 'output_file', volsymm_on_short, 'input_file')
