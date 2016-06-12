@@ -97,5 +97,4 @@ If you use it in a publication please cite:
 
    Janke AL, Ullmann JF, Robust methods to create ex vivo minimum
 deformation atlases for brain mapping.
-   Methods. 2015 Feb;73:18-26. doi: 10.1016/j.ymeth.2015.01.005.
-
+   Methods. 2015 Feb;73:18-26. doi: [10.1016/j.ymeth.2015.01.005](http://dx.doi.org/10.1016/j.ymeth.2015.01.005)
