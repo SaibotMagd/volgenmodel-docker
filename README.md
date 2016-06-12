@@ -34,6 +34,9 @@ You should also end up with the tools from https://github.com/BIC-MNI/minc-widge
 
 Install the latest from Github:
 
+    sudo apt-get install python-nibabel python-traits python-future python-simplejson
+    sudo pip install prov
+
     git clone https://github.com/nipy/nipype
     cd nipype
     sudo python setup.py install
