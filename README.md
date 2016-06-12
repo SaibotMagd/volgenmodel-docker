@@ -87,3 +87,15 @@ available in a separate repository (around 96Mb in size): https://github.com/car
 The final model should look like this:
 
 ![mouse model triplanar](https://raw.githubusercontent.com/carlohamalainen/volgenmodel-fast-example/master/model-2016-01-09.png)
+
+# Citation
+This method is an implementation of the technique described in this paper:
+
+   http://www.ncbi.nlm.nih.gov/pubmed/25620005
+
+If you use it in a publication please cite:
+
+   Janke AL, Ullmann JF, Robust methods to create ex vivo minimum
+deformation atlases for brain mapping.
+   Methods. 2015 Feb;73:18-26. doi: 10.1016/j.ymeth.2015.01.005.
+
