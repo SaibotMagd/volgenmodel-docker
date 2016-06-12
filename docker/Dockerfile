@@ -1,23 +1,52 @@
-FROM debian
+FROM ubuntu
 MAINTAINER Carlo Hamalainen <carlo@carlo-hamalainen.net>
 
-RUN apt-get -qq update
-RUN apt-get -qqy install python-pip python-numpy python-dev python-networkx python-nose libgetopt-tabular-perl imagemagick octave ipython htop screen git cmake cmake-curses-gui build-essential g++ bison flex freeglut3 freeglut3-dev libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers wget vim
+RUN         apt-get -qq update
+RUN         apt-get -qqy install python git ipython screen htop vim octave cmake cmake-curses-gui build-essential g++ cmake cmake-curses-gui bison flex freeglut3 freeglut3-dev libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers python-pip python-dev python-scipy python-numpy python-lxml imagemagick zlib1g-dev
 
-RUN /usr/bin/pip install nibabel
-RUN /usr/bin/pip install traits traitsui
+RUN         mkdir -p /opt
+WORKDIR     /opt
 
-RUN mkdir -p /opt/code
+RUN git clone --recursive git://github.com/BIC-MNI/minc-toolkit.git minc-toolkit
+WORKDIR /opt/minc-toolkit
+RUN rm -fr build
+WORKDIR /opt/minc-toolkit/build
+RUN cmake -DMT_BUILD_SHARED_LIBS=ON -DMT_BUILD_VISUAL_TOOLS=ON ..
+RUN make
+RUN sudo make install
 
-RUN git clone --recursive https://github.com/BIC-MNI/minc-toolkit.git   /opt/code/minc-toolkit
-RUN git clone https://github.com/mcvaneede/pyminc.git                   /opt/code/pyminc
-RUN git clone https://github.com/nipy/nipype.git                        /opt/code/nipype
-RUN git clone https://github.com/BIC-MNI/minc-widgets.git               /opt/code/minc-widgets
-RUN git clone https://github.com/carlohamalainen/volgenmodel-nipype.git /opt/code/volgenmodel-nipype
+WORKDIR     /opt
 
-# http://docs.docker.com/examples/running_ssh_service/
-RUN apt-get install -y openssh-server
-RUN mkdir /var/run/sshd
-RUN echo 'root:screencast' |chpasswd
-EXPOSE 22
-CMD    ["/usr/sbin/sshd", "-D"]
+RUN git clone https://github.com/nipy/nipype
+WORKDIR /opt/nipype
+
+RUN pip install networkx
+RUN pip install nibabel
+RUN pip install traits
+RUN pip install nose
+RUN pip install future
+RUN pip install simplejson
+RUN pip install prov
+RUN python setup.py install
+
+
+
+WORKDIR     /opt
+RUN git clone https://github.com/carlohamalainen/volgenmodel-nipype
+WORKDIR /opt/volgenmodel-nipype
+
+ENV PYTHONPATH /opt/volgenmodel-nipype
+ENV PATH /opt/volgenmodel-nipype/extra-scripts:$PATH
+
+ENV PERL5LIB /usr/local/perl
+
+RUN mkdir /scratch
+
+ADD volgenmodel-fast-example /scratch/volgenmodel-fast-example
+
+ADD go.py /opt/
+ADD go.sh /opt/
+
+WORKDIR /opt
+
+CMD /bin/bash

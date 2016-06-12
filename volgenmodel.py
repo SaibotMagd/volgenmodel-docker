@@ -16,7 +16,7 @@ import nipype.interfaces.io as nio
 import nipype.interfaces.utility as utils
 from copy import deepcopy
 
-from nipypeminc import  \
+from nipype.interfaces.minc import  \
         Volcentre,      \
         Norm,           \
         Volpad,         \
@@ -41,8 +41,22 @@ import glob
 import pickle
 import gzip
 
+
+def IdentityFile(input_file):
+    # Adapted from: http://nipy.org/nipype/users/function_interface.html
+
+    import os
+    import shutil
+
+    output_file = 'IdentityFile_copy' + os.path.splitext(input_file)[1]
+    shutil.copyfile(input_file, output_file)
+
+    return os.path.abspath(output_file)
+
+
 def load_pklz(f):
     return pickle.load(gzip.open(f))
+
 
 def _calc_threshold_blur_preprocess(input_file):
     from volgenmodel import get_step_sizes
@@ -152,15 +166,28 @@ def get_step_sizes(mincfile):
 
     return (xstep, ystep, zstep)
 
+def read_conf_array(opt):
+    """
+    Set up the @conf array.
+    """
 
-if __name__ == '__main__':
+    if opt['config_file'] is not None:
+        conf = None
+        exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
+        assert conf is not None
+    else:
+        conf = default_conf
+
+    return conf
+
+def make_workflow():
     default_conf = [ {'step': 16, 'blur_fwhm': 16, 'iterations': 4},
                      {'step':  8, 'blur_fwhm':  8, 'iterations': 8},
                      {'step':  4, 'blur_fwhm':  4, 'iterations': 8},
                      {'step':  2, 'blur_fwhm':  2, 'iterations': 4},
                    ]
 
-    FAST_EXAMPLE_BASE_DIR = '/scratch/fast-example'
+    FAST_EXAMPLE_BASE_DIR = '/scratch/volgenmodel-fast-example'
 
     # Top level workflow.
     workflow = pe.Workflow(name="workflow")
@@ -171,16 +198,14 @@ if __name__ == '__main__':
 
     workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 
-    infiles = glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'sml*.mnc'))
+    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'mouse*mnc')))
 
-    datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_sml')
+    datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_mouse')
     datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
-    datasource.inputs.template = 'sml*.mnc'
+    datasource.inputs.template = 'mouse*.mnc'
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, 'volgenmodel_final_output'))
-
-    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'sml*mnc')))
 
     opt = { 'verbose': 0,
             'clobber': 0,
@@ -217,7 +242,7 @@ if __name__ == '__main__':
     opt['fit_stages'] = 'lin,1,3'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
-    # opt['workdir'] = '/scratch/fast-example/work'
+    # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
     opt['verbose'] = 1
     opt['clobber'] = 1
 
@@ -259,13 +284,7 @@ if __name__ == '__main__':
             print "  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c])
         c += 1
 
-    # set up the @conf array
-    if opt['config_file'] is not None:
-        conf = None
-        exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
-        assert conf is not None
-    else:
-        conf = default_conf
+    conf = read_conf_array(opt)
 
     # sanity check for fit config
     if fit_stages[-1] > (len(conf) - 1):
@@ -304,8 +323,14 @@ if __name__ == '__main__':
 
         # do_cmd('mv -f %s %s' % (nrmfile, resfiles[f],))
     else:
+        preprocess_normalise_id = utils.Function(
+                                            input_names=['input_file'],
+                                            output_names=['output_file'],
+                                            function=IdentityFile,
+                                            )
+
         preprocess_normalise = pe.MapNode(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=preprocess_normalise_id,
                                     name='preprocess_normalise',
                                     iterfield=['input_file'])
 
@@ -322,8 +347,14 @@ if __name__ == '__main__':
                                 name='preprocess_volpad',
                                 iterfield=['input_file'])
     else:
+        preprocess_volpad_id = utils.Function(
+                                            input_names=['input_file'],
+                                            output_names=['output_file'],
+                                            function=IdentityFile,
+                                            )
+
         preprocess_volpad = pe.MapNode(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=preprocess_volpad_id,
                                     name='preprocess_volpad',
                                     iterfield=['input_file'])
 
@@ -336,8 +367,14 @@ if __name__ == '__main__':
                                     name='preprocess_voliso',
                                     iterfield=['input_file'])
     else:
+        preprocess_voliso_id = utils.Function(
+                                            input_names=['input_file'],
+                                            output_names=['output_file'],
+                                            function=IdentityFile,
+                                            )
+
         preprocess_voliso = pe.MapNode(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=preprocess_voliso_id,
                                     name='preprocess_iso',
                                     iterfield=['input_file'])
 
@@ -352,8 +389,14 @@ if __name__ == '__main__':
                                 name='preprocess_pik',
                                 iterfield=['input_file'])
     else:
+        preprocess_pik_id = utils.Function(
+                                    input_names=['input_file'],
+                                    output_names=['output_file'],
+                                    function=IdentityFile,
+                                    )
+
         preprocess_pik = pe.MapNode(
-                                interface=utils.IdentityInterface(fields=['input_file']),
+                                interface=preprocess_pik_id,
                                 name='preprocess_pik',
                                 iterfield=['input_file'])
 
@@ -740,8 +783,14 @@ if __name__ == '__main__':
 
         else:
             # do_cmd('ln -s -f %s %s' % (os.path.basename(iavgfile), stage_model,))
+            volsymm_on_short_id = utils.Function(
+                                    input_names=['input_file'],
+                                    output_names=['output_file'],
+                                    function=IdentityFile,
+                                    )
+
             volsymm_on_short = pe.Node(
-                                    interface=utils.IdentityInterface(fields=['input_file']),
+                                    interface=volsymm_on_short_id,
                                     name='volsymm_on_short_' + snum_txt)
 
             workflow.connect(bigaverage, 'output_file', volsymm_on_short, 'input_file')
@@ -791,4 +840,8 @@ if __name__ == '__main__':
 
         cmodel = stage_model
 
-    # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 4})
+    return workflow
+
+if __name__ == '__main__':
+    workflow = make_workflow()
+    workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 4})
