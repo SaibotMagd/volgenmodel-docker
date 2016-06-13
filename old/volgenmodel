@@ -395,7 +395,7 @@ else{
       }
    }
 
-# create an apropriate identity transformation
+# create an appropriate identity transformation
 $initxfm = "$opt{'workdir'}/ident-$conf[0]{'step'}.xfm";
 &do_cmd_batch("IDT$$", "BLR$$-init-model",
               'gennlxfm', '-clobber',
