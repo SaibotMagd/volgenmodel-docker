@@ -380,7 +380,7 @@ else:
                 output_file_base=os.path.join(opt['workdir'], '00-init-model'))
       blur.run()
 
-# create an apropriate identity transformation
+# create an appropriate identity transformation
 initxfm = os.path.join(opt['workdir'], 'ident-' + str(conf[0]['step']) + '.xfm')
 # &do_cmd_batch("IDT$$", "BLR$$-init-model",
 #               'gennlxfm', '-clobber',
