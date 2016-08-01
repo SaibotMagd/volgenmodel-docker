@@ -5,8 +5,8 @@
 
 # Author: Carlo Hamalainen <carlo@carlo-hamalainen.net>
 
-# from nipype import config
-# config.enable_debug_mode()
+from nipype import config
+config.enable_debug_mode()
 
 import os
 import os.path
@@ -35,7 +35,6 @@ from nipype.interfaces.minc import  \
         Reshape,        \
         VolSymm
 
-
 import glob
 
 import pickle
@@ -52,7 +51,6 @@ def IdentityFile(input_file):
     shutil.copyfile(input_file, output_file)
 
     return os.path.abspath(output_file)
-
 
 def load_pklz(f):
     return pickle.load(gzip.open(f))
@@ -138,14 +136,17 @@ def do_cmd(cmd):
     expected to be short running, e.g. mincinfo.
     """
 
-    print 'do_cmd:', cmd
+    print('do_cmd:', cmd)
 
     proc = subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             shell=True)
-    stdout, stderr = proc.communicate()
+    stdoutByte, stderrByte = proc.communicate()
 
+
+    stderr = stderrByte.decode('ascii')
+    stdout = stdoutByte.decode('ascii')
     if stderr == '':
         return stdout
     else:
@@ -176,6 +177,11 @@ def read_conf_array(opt):
         exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
         assert conf is not None
     else:
+        default_conf = [{'step': 16, 'blur_fwhm': 16, 'iterations': 4},
+                        {'step': 8, 'blur_fwhm': 8, 'iterations': 8},
+                        {'step': 4, 'blur_fwhm': 4, 'iterations': 8},
+                        {'step': 2, 'blur_fwhm': 2, 'iterations': 4},
+                        ]
         conf = default_conf
 
     return conf
@@ -187,8 +193,8 @@ def make_workflow():
                      {'step':  2, 'blur_fwhm':  2, 'iterations': 4},
                    ]
 
-    FAST_EXAMPLE_BASE_DIR = '/scratch/volgenmodel-fast-example'
-
+    #FAST_EXAMPLE_BASE_DIR='/data/lfs2/model-mie/pyScripts/python3volgenmodel-nipype/volgenmodel-fast-example/'
+    FAST_EXAMPLE_BASE_DIR = '/data/lfs2/model-mie/controls/'
     # Top level workflow.
     workflow = pe.Workflow(name="workflow")
 
@@ -202,7 +208,7 @@ def make_workflow():
 
     datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_mouse')
     datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
-    datasource.inputs.template = 'mouse*.mnc'
+    datasource.inputs.template = '*/*UNI-DEN*/*normStepSize_.mnc'
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, 'volgenmodel_final_output'))
@@ -238,7 +244,8 @@ def make_workflow():
     opt['model_norm_thresh'] = 0.1
     opt['model_min_step'] = 1.0
     opt['pad'] = 5
-    opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
+    # opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
+    opt['config_file'] = None
     opt['fit_stages'] = 'lin,1,3'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
@@ -254,10 +261,10 @@ def make_workflow():
 
     # setup the fit stages
     fit_stages = opt['fit_stages'].split(',')
-    fit_stages = map(eval_to_int, fit_stages)
+    fit_stages = list(map(eval_to_int, fit_stages))
 
     # check for infiles and create files array
-    if opt['verbose']: print "+++ INFILES\n"
+    if opt['verbose']: print("+++ INFILES\n")
 
     dirs = [None] * len(infiles)
     files = [None] * len(infiles)
@@ -281,7 +288,7 @@ def make_workflow():
         fileh[files[c]] = c
 
         if opt['verbose']:
-            print "  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c])
+            print("  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c]))
         c += 1
 
     conf = read_conf_array(opt)
@@ -338,11 +345,12 @@ def make_workflow():
 
     # extend/pad
     if opt['pad'] > 0:
+        smoothPadValue = round(opt['pad']/3)
         preprocess_volpad = pe.MapNode(
                                 interface=Volpad(
                                             distance=opt['pad'],
                                             smooth=True,
-                                            smooth_distance=int(opt['pad'])/3), # FIXME int or float division?
+                                            smooth_distance=smoothPadValue), # FIXME int or float division?
                                             # output_file=fitfiles[f]),
                                 name='preprocess_volpad',
                                 iterfield=['input_file'])
@@ -450,10 +458,10 @@ def make_workflow():
         if fit_stages[snum] == 'lin':
             lastlin = snum # "%02d" % snum
 
-    print "+++ Last Linear stage:", lastlin
+    print("+++ Last Linear stage:", lastlin)
 
     # Foreach end stage in the fitting profile
-    print "+++ Fitting";
+    print("+++ Fitting")
 
     last_linear_stage_xfm_node = None
 
@@ -468,7 +476,7 @@ def make_workflow():
 
         end_stage = fit_stages[snum]
         snum_txt = "%02d_" % snum
-        print "  + [Stage: {snum_txt}] End stage: {end_stage}".format(snum_txt=snum_txt, end_stage=end_stage)
+        print("  + [Stage: {snum_txt}] End stage: {end_stage}".format(snum_txt=snum_txt, end_stage=end_stage))
 
         # make subdir in working dir for files
         # cworkdir = os.path.join(opt['workdir'], snum_txt)
@@ -497,7 +505,7 @@ def make_workflow():
         if float(modelmaxstep) < float(opt['model_min_step']):
             modelmaxstep = opt['model_min_step']
 
-        print "   -- Model Max step:", modelmaxstep
+        print("   -- Model Max step:", modelmaxstep)
 
         norm = pe.Node(
                     interface=Norm(
@@ -511,14 +519,12 @@ def make_workflow():
                     name='norm_' + snum_txt)
 
         workflow.connect(cmodel, 'output_file', norm, 'input_file')
-
         voliso = pe.Node(
                         interface=Voliso(maxstep=modelmaxstep),
                                     # input_file=isomodel_base + ".nrm.mnc",
                                     # output_file=isomodel_base + ".mnc"),
                         name='voliso_' + snum_txt)
         workflow.connect(norm, 'output_file', voliso, 'input_file')
-
         if opt['check']:
             pik = pe.Node(
                         interface=Pik(
@@ -532,8 +538,6 @@ def make_workflow():
                         name='pik_check_voliso' + snum_txt)
 
             workflow.connect(voliso, 'output_file', pik, 'input_file')
-
-
         # create the isomodel fit mask
         #chomp($step_x = `mincinfo -attvalue xspace:step $isomodel_base.msk.mnc`);
         step_x = 1
@@ -554,14 +558,15 @@ def make_workflow():
 
         # linear or nonlinear fit
         if end_stage == 'lin':
-            print "---Linear fit---"
+            print("---Linear fit---")
         else:
-            print "---Non Linear fit---"
+            print("---Non Linear fit---")
 
             # create nlin fit config
             if end_stage != 'lin':
                 write_conf = pe.Node(
-                                    interface=deepcopy(write_stage_conf_file), # Beware! Need deepcopy since write_stage_conf_file is not a constructor!
+                                    interface=deepcopy
+(write_stage_conf_file), # Beware! Need deepcopy since write_stage_conf_file is not a constructor!
                                     name='write_conf_' + snum_txt)
 
                 write_conf.inputs.snum       = snum
@@ -844,4 +849,5 @@ def make_workflow():
 
 if __name__ == '__main__':
     workflow = make_workflow()
-    workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 4})
+    workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 32})
+    # workflow.run()http://www.tutorialspoint.com/python/os_listdir.htm
