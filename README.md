@@ -1,8 +1,24 @@
 # volgenmodel-nipype
 
-Port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to Nipype. Interfaces to MINC tools that were previously in this repo are now in the master branch of [Nipype](https://github.com/nipy/nipype).
+Port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to [Nipype](https://github.com/nipy/nipype).
 
-# Install
+# Run
+Install the Docker Engine: 
+* for [windows:](https://docs.docker.com/engine/installation/windows/#/docker-for-windows)
+* for [mac:](https://docs.docker.com/engine/installation/mac/#/docker-for-mac)
+* for [linux:](https://docs.docker.com/engine/installation/linux/ubuntulinux/)
+
+Clone repositories including the sample mouse brain data:
+
+    git clone https://github.com/carlohamalainen/volgenmodel-nipype.git
+    cd volgenmodel-nipype/docker
+    git clone https://github.com/carlohamalainen/volgenmodel-fast-example.git # about 96Mb
+
+open a shell in the docker folder and run:
+
+    docker build --no-cache -t='carlo/volgenmodel-nipype' .
+
+# Install on Linux
 
 ## Prerequisites
 
