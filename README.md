@@ -1,6 +1,5 @@
 # volgenmodel-nipype
-
-Port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to [Nipype](https://github.com/nipy/nipype).
+volgenmodel-nipype is the port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to [Nipype](https://github.com/nipy/nipype). It creates nonlinear models from a series of input MINC files.
 
 # Run
 Install the Docker Engine: 
