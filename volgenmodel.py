@@ -34,7 +34,7 @@ from nipype.interfaces.minc import  \
         BigAverage,     \
         Reshape,        \
         VolSymm
-
+from nipype.interfaces.utility import Rename
 import glob
 
 import pickle
@@ -269,6 +269,7 @@ def make_workflow():
     dirs = [None] * len(infiles)
     files = [None] * len(infiles)
     fileh = {}
+    sub_id = []
 
     c = 0
 
@@ -286,6 +287,7 @@ def make_workflow():
         files[c] = c_txt + '-' + os.path.basename(z) # "$c_txt-" . &basename($_);
         files[c] = files[c].replace('.mnc', '') # =~ s/\.mnc$//;
         fileh[files[c]] = c
+        sub_id.append(c)
 
         if opt['verbose']:
             print("  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c]))
@@ -299,13 +301,20 @@ def make_workflow():
                        "fit step ($fit_stages[-1]) beyond what is defined in the "
                        "fitting protocol (size: $#conf)\n\n")
 
+    #rename
+    renameFiles = pe.MapNode(interface=Rename(format_string="importDcm2Mnc%(sd)04d_normStepSize_", keep_ext=True),
+                             iterfield=['in_file', 'sd'], name='RenameFile')
+    renameFiles.inputs.sd = sub_id
+
+    workflow.connect(datasource, 'outfiles', renameFiles, 'in_file')
+
     # do pre-processing
     preprocess_volcentre = pe.MapNode(
                     interface=Volcentre(zero_dircos=True),
                     name='preprocess_volcentre',
                     iterfield=['input_file'])
 
-    workflow.connect(datasource, 'outfiles', preprocess_volcentre, 'input_file')
+    workflow.connect(renameFiles, 'out_file', preprocess_volcentre, 'input_file')
 
 
     # normalise
