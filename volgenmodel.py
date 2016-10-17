@@ -5,8 +5,8 @@
 
 # Author: Carlo Hamalainen <carlo@carlo-hamalainen.net>
 
-from nipype import config
-config.enable_debug_mode()
+#from nipype import config
+#config.enable_debug_mode()
 
 import os
 import os.path
@@ -177,7 +177,7 @@ def read_conf_array(opt):
         exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
         assert conf is not None
     else:
-        default_conf = [{'step': 16, 'blur_fwhm': 16, 'iterations': 4},
+        default_conf = [{'step': 8, 'blur_fwhm': 16, 'iterations': 4},
                         {'step': 8, 'blur_fwhm': 8, 'iterations': 8},
                         {'step': 4, 'blur_fwhm': 4, 'iterations': 8},
                         {'step': 2, 'blur_fwhm': 2, 'iterations': 4},
@@ -194,7 +194,7 @@ def make_workflow():
                    ]
 
     #FAST_EXAMPLE_BASE_DIR='/data/lfs2/model-mie/pyScripts/python3volgenmodel-nipype/volgenmodel-fast-example/'
-    FAST_EXAMPLE_BASE_DIR = '/data/lfs2/model-mie/controls/'
+    FAST_EXAMPLE_BASE_DIR = '/scratch/volgenmodel-fast-example'
     # Top level workflow.
     workflow = pe.Workflow(name="workflow")
 
@@ -208,7 +208,7 @@ def make_workflow():
 
     datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_mouse')
     datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
-    datasource.inputs.template = '*/*UNI-DEN*/*normStepSize_.mnc'
+    datasource.inputs.template = 'mouse*.mnc'
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, 'volgenmodel_final_output'))
