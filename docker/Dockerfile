@@ -13,13 +13,14 @@ RUN rm -fr build
 WORKDIR /opt/minc-toolkit/build
 RUN cmake -DMT_BUILD_SHARED_LIBS=ON -DMT_BUILD_VISUAL_TOOLS=ON ..
 RUN make
-RUN sudo make install
+RUN make install
 
 WORKDIR     /opt
 
 RUN git clone https://github.com/nipy/nipype
 WORKDIR /opt/nipype
 
+RUN pip install -U pip
 RUN pip install networkx
 RUN pip install nibabel
 RUN pip install traits
@@ -32,7 +33,7 @@ RUN python setup.py install
 
 
 WORKDIR     /opt
-RUN git clone https://github.com/carlohamalainen/volgenmodel-nipype
+RUN git clone https://github.com/isAarya/volgenmodel-nipype
 WORKDIR /opt/volgenmodel-nipype
 
 ENV PYTHONPATH /opt/volgenmodel-nipype
