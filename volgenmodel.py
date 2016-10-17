@@ -220,7 +220,7 @@ def make_workflow():
             'clean': 0,
             'keep_tmp': 0,
             # 'workdir': os.path.join(os.getcwd(), 'work'), # "./$me-work",
-            'batch': 0,
+             'batch': 0,
             'symmetric': 0,
             'symmetric_dir': 'x',
             'normalise': 1,
@@ -306,7 +306,7 @@ def make_workflow():
                              iterfield=['in_file', 'sd'], name='RenameFile')
     renameFiles.inputs.sd = sub_id
 
-    workflow.connect(datasource, 'outfiles', renameFiles, 'in_file')
+    workflow.connect(datasource, 'outfiles', renameFiles, 'in_file')  
 
     # do pre-processing
     preprocess_volcentre = pe.MapNode(
@@ -317,7 +317,7 @@ def make_workflow():
     workflow.connect(renameFiles, 'out_file', preprocess_volcentre, 'input_file')
 
 
-    # normalise
+    # normalise  
     if opt['normalise']:
         preprocess_threshold_blur = pe.MapNode(
                                         interface=deepcopy(calc_threshold_blur_preprocess), # Beware! Need deepcopy since calc_threshold_blur_preprocess is not a constructor!
@@ -353,13 +353,13 @@ def make_workflow():
     workflow.connect(preprocess_volcentre, 'output_file', preprocess_normalise, 'input_file')
 
     # extend/pad
-    if opt['pad'] > 0:
+    if opt['pad'] > 0:  
         smoothPadValue = round(opt['pad']/3)
         preprocess_volpad = pe.MapNode(
                                 interface=Volpad(
                                             distance=opt['pad'],
                                             smooth=True,
-                                            smooth_distance=smoothPadValue), # FIXME int or float division?
+                                            smooth_distance=smoothPadValue), 
                                             # output_file=fitfiles[f]),
                                 name='preprocess_volpad',
                                 iterfield=['input_file'])
@@ -378,7 +378,7 @@ def make_workflow():
     workflow.connect(preprocess_normalise, 'output_file', preprocess_volpad, 'input_file')
 
     # isotropic resampling
-    if opt['iso']:
+    if opt['iso']:  
         preprocess_voliso = pe.MapNode(
                                     interface=Voliso(avgstep=True), # output_file=isofile),
                                     name='preprocess_voliso',
@@ -421,7 +421,7 @@ def make_workflow():
 
 
     # setup the initial model
-    if opt['init_model'] is not None:
+    if opt['init_model'] is not None:  
         # cmodel = opt['init_model']
         raise NotImplemented
         # To do this, make a data grabber that sends the MNC file to
@@ -637,7 +637,7 @@ def make_workflow():
             workflow.connect(xfmconcat,         'output_file', nlpfit, 'init_xfm')
             workflow.connect(mincmath,          'output_file', nlpfit, 'source_mask')
             workflow.connect(voliso,            'output_file', nlpfit, 'source')
-            workflow.connect(preprocess_voliso, 'output_file', nlpfit, 'target') # FIXME Make sure that fitfiles[f] is preprocess_voliso at this point in the program.
+            workflow.connect(preprocess_voliso, 'output_file', nlpfit, 'target') # Make sure that fitfiles[f] is preprocess_voliso at this point in the program.
 
             workflow.connect(xfmconcat, 'output_grids', nlpfit, 'input_grid_files')
 
@@ -654,7 +654,7 @@ def make_workflow():
         if end_stage != 'lin':
             workflow.connect(nlpfit, 'output_grid', xfmavg, 'input_grid_files')
 
-        workflow.connect(modxfm, 'output_xfm', xfmavg, 'input_files') # FIXME check that this works - multiple outputs of MapNode going into single list of xfmavg.
+        workflow.connect(modxfm, 'output_xfm', xfmavg, 'input_files') # check that this works - multiple outputs of MapNode going into single list of xfmavg.
 
         if end_stage == 'lin':
             xfmavg.interface.inputs.ignore_nonlinear = True
@@ -662,7 +662,7 @@ def make_workflow():
             xfmavg.interface.inputs.ignore_linear = True
 
 
-        # invert model xfm
+        # invert model xfm 
         xfminvert = pe.MapNode(
                             interface=XfmInvert(),
                                         # input_file=modxfm[f],
@@ -681,9 +681,9 @@ def make_workflow():
         workflow.connect(xfminvert, 'output_file', merge_xfm, 'in1')
         workflow.connect(xfmavg,    'output_file', merge_xfm, 'in2')
 
-        # Collect grid files of xfminvert and xvmavg. This is in two steps.
+        # Collect grid f iles of xfminvert and xvmavg. This is in two steps.
         #
-        # 1. Merge MapNode results.
+        # 1. Merge MapNode results. 
         merge_xfm_mapnode_result = pe.Node(
                             interface=utils.Merge(1),
                             name='merge_xfm_mapnode_result_' + snum_txt)
@@ -778,11 +778,11 @@ def make_workflow():
             workflow.connect(bigaverage, 'output_file', resample_to_short, 'input_file')
 
 
-            assert opt['symmetric_dir'] == 'x' # FIXME handle other cases
+            assert opt['symmetric_dir'] == 'x' #  handle other cases
             volsymm_on_short = pe.Node(
                                     interface=VolSymm(x=True),
                                                     # input_file=symfile,
-                                                    # trans_file=symxfm, # FIXME This is an output!
+                                                    # trans_file=symxfm, # This is an output!
                                                     # output_file=stage_model),
                                     name='volsymm_on_short_' + snum_txt)
 
@@ -834,23 +834,23 @@ def make_workflow():
             # create and output standard deviation file if requested
             if opt['output_stdev'] is not None:
                 if opt['symmetric']:
-                    assert opt['symmetric_dir'] == 'x' # FIXME handle other cases
+                    assert opt['symmetric_dir'] == 'x' # handle other cases
                     volsymm_final_model = pe.Node(
                                                 interface=VolSymm(
                                                                 x=True,
                                                                 nofit=True),
                                                                 # input_file=istdfile,
-                                                                # trans_file=symxfm, # FIXME This is an output!
+                                                                # trans_file=symxfm, # This is an output!
                                                                 # output_file=opt['output_stdev']),
                                                 name='volsymm_final_model_' + snum_txt)
 
                     workflow.connect(bigaverage,        'sd_file',      volsymm_final_model, 'input_file')
                     workflow.connect(volsymm_on_short,  'trans_file',   volsymm_final_model, 'trans_file')
                     workflow.connect(volsymm_on_short,  'output_grid',  volsymm_final_model, 'input_grid_files')
-                    workflow.connect(volsymm_final_model, 'output_file', datasink, 'stdev') # FIXME we ignore opt['output_stdev']
+                    workflow.connect(volsymm_final_model, 'output_file', datasink, 'stdev') # we ignore opt['output_stdev']
                 else:
                     # do_cmd('cp -f %s %s' % (istdfile, opt['output_stdev'],))
-                    workflow.connect(bigaverage, 'sd_file', datasink, 'stdev') # FIXME we ignore opt['output_stdev']
+                    workflow.connect(bigaverage, 'sd_file', datasink, 'stdev') # we ignore opt['output_stdev']
 
         cmodel = stage_model
 
