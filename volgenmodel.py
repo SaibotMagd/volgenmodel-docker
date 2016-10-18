@@ -246,7 +246,7 @@ def make_workflow():
     opt['pad'] = 5
     # opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
     opt['config_file'] = None
-    opt['fit_stages'] = 'lin,1,3'
+    opt['fit_stages'] = 'lin,lin,lin'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
