@@ -177,11 +177,11 @@ def read_conf_array(opt):
         exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
         assert conf is not None
     else:
-        #default_conf = [{'step': 8, 'blur_fwhm': 16, 'iterations': 4},
-                        #{'step': 8, 'blur_fwhm': 8, 'iterations': 8},
-                        #{'step': 4, 'blur_fwhm': 4, 'iterations': 8},
-                        #{'step': 2, 'blur_fwhm': 2, 'iterations': 4},
-        #                ]
+        default_conf = [{'step': 8, 'blur_fwhm': 16, 'iterations': 4},
+                        {'step': 8, 'blur_fwhm': 8, 'iterations': 8},
+                        {'step': 4, 'blur_fwhm': 4, 'iterations': 8},
+                        {'step': 2, 'blur_fwhm': 2, 'iterations': 4},
+                        ]
         conf = default_conf
 
     return conf
@@ -246,7 +246,7 @@ def make_workflow():
     opt['pad'] = 5
     # opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
     opt['config_file'] = None
-    opt['fit_stages'] = 'lin,1,3'
+    opt['fit_stages'] = 'lin, lin, lin'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
