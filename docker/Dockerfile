@@ -2,7 +2,7 @@ FROM ubuntu
 MAINTAINER Carlo Hamalainen <carlo@carlo-hamalainen.net>
 
 RUN         apt-get -qq update
-RUN         apt-get -qqy install python3.5.2 git ipython screen htop vim octave cmake cmake-curses-gui build-essential g++ cmake cmake-curses-gui bison flex freeglut3 freeglut3-dev libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers python-pip python-dev python-scipy python-numpy python-lxml imagemagick zlib1g-dev
+RUN         apt-get -qqy install python git ipython screen htop vim octave cmake cmake-curses-gui build-essential g++ cmake cmake-curses-gui bison flex freeglut3 freeglut3-dev libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers python-pip python-dev python-scipy python-numpy python-lxml imagemagick zlib1g-dev
 
 RUN         mkdir -p /opt
 WORKDIR     /opt
