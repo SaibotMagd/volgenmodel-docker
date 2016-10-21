@@ -177,11 +177,11 @@ def read_conf_array(opt):
         exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
         assert conf is not None
     else:
-        default_conf = [{'step': 8, 'blur_fwhm': 16, 'iterations': 4},
-                        {'step': 8, 'blur_fwhm': 8, 'iterations': 8},
-                        {'step': 4, 'blur_fwhm': 4, 'iterations': 8},
-                        {'step': 2, 'blur_fwhm': 2, 'iterations': 4},
-                        ]
+        #default_conf = [{'step': 8, 'blur_fwhm': 16, 'iterations': 4},
+                        #{'step': 8, 'blur_fwhm': 8, 'iterations': 8},
+                        #{'step': 4, 'blur_fwhm': 4, 'iterations': 8},
+                        #{'step': 2, 'blur_fwhm': 2, 'iterations': 4},
+                        #]
         conf = default_conf
 
     return conf
@@ -263,7 +263,7 @@ def make_workflow():
     fit_stages = opt['fit_stages'].split(',')
     fit_stages = list(map(eval_to_int, fit_stages))
 
-    # check for infiles and create files array
+   # check for infiles and create files array
     if opt['verbose']: print("+++ INFILES\n")
 
     dirs = [None] * len(infiles)
@@ -273,7 +273,7 @@ def make_workflow():
 
     c = 0
 
-    for z in infiles:
+   for z in infiles:
         dir = None
         f = None
 
@@ -283,7 +283,7 @@ def make_workflow():
         assert os.path.exists(z)
 
         # set up arrays
-        dirs[c] = os.path.split(z)[0] # &dirname($_);
+       dirs[c] = os.path.split(z)[0] # &dirname($_);
         files[c] = c_txt + '-' + os.path.basename(z) # "$c_txt-" . &basename($_);
         files[c] = files[c].replace('.mnc', '') # =~ s/\.mnc$//;
         fileh[files[c]] = c
@@ -293,7 +293,7 @@ def make_workflow():
             print("  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c]))
         c += 1
 
-    conf = read_conf_array(opt)
+   conf = read_conf_array(opt)
 
     # sanity check for fit config
     if fit_stages[-1] > (len(conf) - 1):
@@ -303,7 +303,7 @@ def make_workflow():
 
     #rename
     renameFiles = pe.MapNode(interface=Rename(format_string="importDcm2Mnc%(sd)04d_normStepSize_", keep_ext=True),
-                             iterfield=['in_file', 'sd'], name='RenameFile')
+                            iterfield=['in_file', 'sd'], name='RenameFile')
     renameFiles.inputs.sd = sub_id
 
     workflow.connect(datasource, 'outfiles', renameFiles, 'in_file')  
@@ -354,12 +354,12 @@ def make_workflow():
 
     # extend/pad
     if opt['pad'] > 0:  
-        smoothPadValue = 2
+        #smoothPadValue = 2
         preprocess_volpad = pe.MapNode(
                                 interface=Volpad(
                                             distance=opt['pad'],
                                             smooth=True,
-                                            smooth_distance=smoothPadValue), 
+                                            smooth_distance= int( opt['pad']/3), 
                                             # output_file=fitfiles[f]),
                                 name='preprocess_volpad',
                                 iterfield=['input_file'])
