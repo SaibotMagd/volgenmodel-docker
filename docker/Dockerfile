@@ -1,14 +1,14 @@
 FROM ubuntu
 MAINTAINER Carlo Hamalainen <carlo@carlo-hamalainen.net>
 
-#Set the locale
-RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
-
 RUN         apt-get -qq update
 RUN         apt-get -qqy install python git ipython screen htop vim octave cmake cmake-curses-gui build-essential g++ cmake cmake-curses-gui bison flex freeglut3 freeglut3-dev libxi6 libxi-dev libxmu6 libxmu-dev libxmu-headers python-pip python-dev python-scipy python-numpy python-lxml imagemagick zlib1g-dev
+
+#set locale
+RUN locale-gen en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
 
 RUN         mkdir -p /opt
 WORKDIR     /opt
@@ -35,7 +35,6 @@ RUN pip install future
 RUN pip install simplejson
 RUN pip install prov
 RUN python setup.py install
-
 
 
 WORKDIR     /opt
