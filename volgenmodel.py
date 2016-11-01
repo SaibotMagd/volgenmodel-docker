@@ -194,7 +194,7 @@ def make_workflow():
                    ]
 
     #FAST_EXAMPLE_BASE_DIR='/data/lfs2/model-mie/pyScripts/python3volgenmodel-nipype/volgenmodel-fast-example/'
-    FAST_EXAMPLE_BASE_DIR = '/scratch/volgenmodel-fast-example'
+    FAST_EXAMPLE_BASE_DIR = '/scratch/volgenmodel-fast-example/'
     # Top level workflow.
     workflow = pe.Workflow(name="workflow")
 
