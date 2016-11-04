@@ -354,12 +354,12 @@ def make_workflow():
 
     # extend/pad
     if opt['pad'] > 0:  
-        #smoothPadValue = 2
+        smoothPadValue = 2
         preprocess_volpad = pe.MapNode(
                                 interface=Volpad(
                                             distance=opt['pad'],
                                             smooth=True,
-                                            smooth_distance=int(opt['pad'])/3), 
+                                            smooth_distance= smoothPadValue, 
                                             # output_file=fitfiles[f]),
                                 name='preprocess_volpad',
                                 iterfield=['input_file'])
