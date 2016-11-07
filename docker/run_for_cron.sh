@@ -7,4 +7,4 @@ cd /home/carlo/production/volgenmodel-nipype-docker
 
 ./build.sh
 
-docker run -i -t iatest-g/carlo/volgenmodel-nipype /bin/bash /opt/go.sh
+docker run -i -t iatest-h/carlo/volgenmodel-nipype /bin/bash /opt/go.sh
