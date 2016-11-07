@@ -98,9 +98,9 @@ def _write_stage_conf_file(snum, snum_txt, conf, end_stage):
 
         conf_dicts = []
         for s in range(end_stage + 1):
-            conf_dicts.append({'step': + conf[s]['step'],
-                               'blur_fwhm': conf[s]['blur_fwhm'],
-                               'iterations': conf[s]['iterations']})
+            conf_dicts.append({ str('step'): + conf[s][str('step')],
+                               str('blur_fwhm'): conf[s][str('blur_fwhm')],
+                               str('iterations'): conf[s][str('iterations')]})
 
         CONF.write(to_perl_syntax(conf_dicts))
 
@@ -177,20 +177,20 @@ def read_conf_array(opt):
         exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
         assert conf is not None
     else:
-        default_conf = [{'step': 8, 'blur_fwhm': 16, 'iterations': 4},
-                        {'step': 8, 'blur_fwhm': 8, 'iterations': 8},
-                        {'step': 4, 'blur_fwhm': 4, 'iterations': 8},
-                        {'step': 2, 'blur_fwhm': 2, 'iterations': 4},
+        default_conf = [{ str('step'): 8, str('blur_fwhm'): 16, str('iterations'): 4},
+                        { str('step'): 8, str('blur_fwhm'): 8, str('iterations'): 8},
+                        { str('step'): 4, str('blur_fwhm'): 4, str('iterations'): 8},
+                        { str('step'): 2, str('blur_fwhm'): 2, str('iterations'): 4},
                         ]
         conf = default_conf
 
     return conf
 
 def make_workflow():
-    default_conf = [ {'step': 16, 'blur_fwhm': 16, 'iterations': 4},
-                     {'step':  8, 'blur_fwhm':  8, 'iterations': 8},
-                     {'step':  4, 'blur_fwhm':  4, 'iterations': 8},
-                     {'step':  2, 'blur_fwhm':  2, 'iterations': 4},
+    default_conf = [ { str('step'): 16, str('blur_fwhm'): 16, str('iterations'): 4},
+                     { str('step'):  8, str('blur_fwhm'):  8, str('iterations'): 8},
+                     { str('step'):  4, str('blur_fwhm'):  4, str('iterations'): 8},
+                     { str('step'):  2, str('blur_fwhm'):  2, str('iterations'): 4},
                    ]
 
     #FAST_EXAMPLE_BASE_DIR='/data/lfs2/model-mie/pyScripts/python3volgenmodel-nipype/volgenmodel-fast-example/'
