@@ -177,24 +177,24 @@ def read_conf_array(opt):
         exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
         assert conf is not None
     else:
-        default_conf = [{ str('step'): 8, str('blur_fwhm'): 16, str('iterations'): 4},
-                        { str('step'): 8, str('blur_fwhm'): 8, str('iterations'): 8},
-                        { str('step'): 4, str('blur_fwhm'): 4, str('iterations'): 8},
-                        { str('step'): 2, str('blur_fwhm'): 2, str('iterations'): 4},
+        default_conf = [{ str('step'): 8, str('blur_fwhm'): 16, str('iterations'): 20},
+                        { str('step'): 8, str('blur_fwhm'): 8, str('iterations'): 20},
+                        { str('step'): 4, str('blur_fwhm'): 4, str('iterations'): 10},
+                        { str('step'): 2, str('blur_fwhm'): 2, str('iterations'): 10},
                         ]
         conf = default_conf
 
     return conf
 
 def make_workflow():
-    default_conf = [ { str('step'): 16, str('blur_fwhm'): 16, str('iterations'): 4},
-                     { str('step'):  8, str('blur_fwhm'):  8, str('iterations'): 8},
-                     { str('step'):  4, str('blur_fwhm'):  4, str('iterations'): 8},
-                     { str('step'):  2, str('blur_fwhm'):  2, str('iterations'): 4},
+    default_conf = [ { str('step'): 16, str('blur_fwhm'): 16, str('iterations'): 20},
+                     { str('step'):  8, str('blur_fwhm'):  8, str('iterations'): 20},
+                     { str('step'):  4, str('blur_fwhm'):  4, str('iterations'): 10},
+                     { str('step'):  2, str('blur_fwhm'):  2, str('iterations'): 10},
                    ]
 
     #FAST_EXAMPLE_BASE_DIR='/data/lfs2/model-mie/pyScripts/python3volgenmodel-nipype/volgenmodel-fast-example/'
-    FAST_EXAMPLE_BASE_DIR = '/scratch/volgenmodel-fast-example/'
+    FAST_EXAMPLE_BASE_DIR = str('/scratch/volgenmodel-fast-example/')
     # Top level workflow.
     workflow = pe.Workflow(name="workflow")
 
@@ -211,7 +211,7 @@ def make_workflow():
     datasource.inputs.template = 'mouse*.mnc'
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
-    datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, 'volgenmodel_final_output'))
+    datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, str('volgenmodel_final_output')))
 
     opt = { 'verbose': 0,
             'clobber': 0,
@@ -246,7 +246,7 @@ def make_workflow():
     opt['pad'] = 5
     # opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
     opt['config_file'] = None
-    opt['fit_stages'] = 'lin, 2'
+    opt['fit_stages'] = 'lin, 1'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
@@ -302,11 +302,11 @@ def make_workflow():
                        "fitting protocol (size: $#conf)\n\n")
 
     #rename
-    renameFiles = pe.MapNode(interface=Rename(format_string="importDcm2Mnc%(sd)04d_normStepSize_", keep_ext=True),
-                             iterfield=['in_file', 'sd'], name='RenameFile')
-    renameFiles.inputs.sd = sub_id
+    #renameFiles = pe.MapNode(interface=Rename(format_string="importDcm2Mnc%(sd)04d_normStepSize_", keep_ext=True),
+                             #iterfield=['in_file', 'sd'], name='RenameFile')
+    #renameFiles.inputs.sd = sub_id
 
-    workflow.connect(datasource, 'outfiles', renameFiles, 'in_file')  
+    #workflow.connect(datasource, 'outfiles', renameFiles, 'in_file')  
 
     # do pre-processing
     preprocess_volcentre = pe.MapNode(
@@ -314,7 +314,8 @@ def make_workflow():
                     name='preprocess_volcentre',
                     iterfield=['input_file'])
 
-    workflow.connect(renameFiles, 'out_file', preprocess_volcentre, 'input_file')
+    #workflow.connect(renameFiles, 'out_file', preprocess_volcentre, 'input_file')
+    workflow.connect( datasource, 'outfiles', preprocess_volcentre, 'input_file')
 
 
     # normalise  
