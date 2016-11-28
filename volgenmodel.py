@@ -164,7 +164,7 @@ def get_step_sizes(mincfile):
     xstep = float(do_cmd(xcmd).split()[0])
     ystep = float(do_cmd(ycmd).split()[0])
     zstep = float(do_cmd(zcmd).split()[0])
-
+ 
     return (xstep, ystep, zstep)
 
 def read_conf_array(opt):
@@ -177,20 +177,25 @@ def read_conf_array(opt):
         exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
         assert conf is not None
     else:
-        default_conf = [{ str('step'): 8, str('blur_fwhm'): 16, str('iterations'): 20},
-                        { str('step'): 8, str('blur_fwhm'): 8, str('iterations'): 20},
-                        { str('step'): 4, str('blur_fwhm'): 4, str('iterations'): 10},
-                        { str('step'): 2, str('blur_fwhm'): 2, str('iterations'): 10},
+        default_conf = [{ str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
+                        { str('step'): 16, str('blur_fwhm'):  8, str('iterations'): 20},
+                        { str('step'): 12, str('blur_fwhm'):  6, str('iterations'): 20},
+                        { str('step'): 8, str('blur_fwhm'):   4, str('iterations'): 20},
+                        { str('step'): 6, str('blur_fwhm'):   3, str('iterations'): 20},
+                        { str('step'): 4, str('blur_fwhm'):   2, str('iterations'): 10},                        { str('step'): 2, str('blur_fwhm'):   1, str('iterations'): 10},
                         ]
         conf = default_conf
 
     return conf
 
 def make_workflow():
-    default_conf = [ { str('step'): 16, str('blur_fwhm'): 16, str('iterations'): 20},
-                     { str('step'):  8, str('blur_fwhm'):  8, str('iterations'): 20},
-                     { str('step'):  4, str('blur_fwhm'):  4, str('iterations'): 10},
-                     { str('step'):  2, str('blur_fwhm'):  2, str('iterations'): 10},
+    default_conf = [ { str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
+                     { str('step'): 16, str('blur_fwhm'):  8, str('iterations'): 20},
+                     { str('step'): 12, str('blur_fwhm'):  6, str('iterations'): 20},
+                     { str('step'):  8, str('blur_fwhm'):  4, str('iterations'): 20},
+                     { str('step'):  6, str('blur_fwhm'):  3, str('iterations'): 20},
+                     { str('step'):  4, str('blur_fwhm'):  2, str('iterations'): 10},
+                     { str('step'):  2, str('blur_fwhm'):  1, str('iterations'): 10},
                    ]
 
     #FAST_EXAMPLE_BASE_DIR='/data/lfs2/model-mie/pyScripts/python3volgenmodel-nipype/volgenmodel-fast-example/'
@@ -242,11 +247,11 @@ def make_workflow():
     opt['check'] = 1
     opt['normalise'] = 1
     opt['model_norm_thresh'] = 0.1
-    opt['model_min_step'] = 1.0
+    opt['model_min_step'] = 0.5
     opt['pad'] = 5
     # opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
     opt['config_file'] = None
-    opt['fit_stages'] = 'lin, 1'
+    opt['fit_stages'] = 'lin, lin, lin, lin, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
