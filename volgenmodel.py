@@ -152,6 +152,7 @@ def do_cmd(cmd):
     else:
         assert False, 'Stuff on stderr: ' + str(stderr)
 
+        
 def get_step_sizes(mincfile):
     """
     Get the x, y, and z step sizes from a Minc file.
@@ -182,7 +183,9 @@ def read_conf_array(opt):
                         { str('step'): 12, str('blur_fwhm'):  6, str('iterations'): 20},
                         { str('step'): 8, str('blur_fwhm'):   4, str('iterations'): 20},
                         { str('step'): 6, str('blur_fwhm'):   3, str('iterations'): 20},
-                        { str('step'): 4, str('blur_fwhm'):   2, str('iterations'): 10},                        { str('step'): 2, str('blur_fwhm'):   1, str('iterations'): 10},
+                        { str('step'): 4, str('blur_fwhm'):   2, str('iterations'): 10},  
+                        { str('step'): 2, str('blur_fwhm'):   1, str('iterations'): 10},
+                        
                         ]
         conf = default_conf
 
