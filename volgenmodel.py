@@ -516,7 +516,7 @@ def make_workflow():
             _idx = 0
         else:
             _idx = end_stage
-        modelmaxstep = conf[_idx]['step']/4
+        modelmaxstep = conf[_idx][ int('step')]/4
 
         # check that the resulting model won't be too large
         # this seems confusing but it actually makes sense...
