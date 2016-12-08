@@ -254,7 +254,7 @@ def make_workflow():
     opt['pad'] = 5
     # opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
     opt['config_file'] = None
-    opt['fit_stages'] = 'lin, lin, 0, 0, 1, 1, 2, 2, 3, 3'
+    opt['fit_stages'] = 'lin, 0, 1'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
@@ -516,7 +516,7 @@ def make_workflow():
             _idx = 0
         else:
             _idx = end_stage
-        modelmaxstep = conf[_idx][ int('step')]/4
+        modelmaxstep = conf[_idx][ 'step']/4
 
         # check that the resulting model won't be too large
         # this seems confusing but it actually makes sense...
