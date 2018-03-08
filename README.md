@@ -2,6 +2,18 @@
 volgenmodel-nipype is the port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to [Nipype](https://github.com/nipy/nipype). It creates nonlinear models from a series of input MINC files.
 
 # Run
+Install minc: https://bic-mni.github.io
+    wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
+    sudo apt-get install libc6 libstdc++6 imagemagick perl
+    sudo dpkg -i minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
+    sudo apt-get install libgl1-mesa-glx libglu1-mesa
+    
+Clone code and test data:    
+    git clone https://github.com/CAIsr/volgenmodel-nipype.git
+    git clone https://github.com/CAIsr/volgenmodel-fast-example.git
+    
+
+# Run in docker (currently not working)
 Install the Docker Engine: 
 * for [windows:](https://docs.docker.com/engine/installation/windows/#/docker-for-windows)
 * for [mac:](https://docs.docker.com/engine/installation/mac/#/docker-for-mac)
