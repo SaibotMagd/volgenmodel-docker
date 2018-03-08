@@ -3,47 +3,34 @@ volgenmodel-nipype is the port of [volgenmodel](https://github.com/andrewjanke/v
 
 # Run
 Install minc: https://bic-mni.github.io
-```
+```bash
     wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
     sudo apt-get install libc6 libstdc++6 imagemagick perl
     sudo dpkg -i minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
     sudo apt-get install libgl1-mesa-glx libglu1-mesa
 ```
 
-Clone code and test data:    
-```
+Clone code and test-data:    
+```bash
 git clone https://github.com/CAIsr/volgenmodel-nipype.git
 git clone https://github.com/CAIsr/volgenmodel-fast-example.git
 ```
 
 install miniconda:
-```
+```bash
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
 ```
 
-# Run in docker (currently not working)
-Install the Docker Engine: 
-* for [windows:](https://docs.docker.com/engine/installation/windows/#/docker-for-windows)
-* for [mac:](https://docs.docker.com/engine/installation/mac/#/docker-for-mac)
-* for [linux:](https://docs.docker.com/engine/installation/linux/ubuntulinux/)
+start new terminal and install packages required:
+```bash
+pip install nipype
+```
 
-Clone repositories including the sample mouse brain data:
-
-    git clone https://github.com/carlohamalainen/volgenmodel-nipype.git
-    cd volgenmodel-nipype/docker
-    git clone https://github.com/carlohamalainen/volgenmodel-fast-example.git # about 96Mb
-
-open a shell in the docker folder and run:
-
-    docker build --no-cache -t='carlo/volgenmodel-nipype' .
-    docker run -i -t carlo/volgenmodel-nipype /bin/bash /opt/go.sh
-
-it should run now :)
-
-The final model should look like this:
-
-![mouse model triplanar](https://raw.githubusercontent.com/carlohamalainen/volgenmodel-fast-example/master/model-2016-01-09.png)
+run volgenmodel with the test data:
+```bash
+python3 volgenmodel.py
+```
 
 # Citation
 This method is an implementation of the technique described in this paper:
@@ -127,5 +114,27 @@ The workflow for a small 3-stage model is:
 
 The final output is in ```$FAST_EXAMPLE_BASE_DIR/volgenmodel_final_output```.
 
+# Run in docker (currently not working)
+Install the Docker Engine: 
+* for [windows:](https://docs.docker.com/engine/installation/windows/#/docker-for-windows)
+* for [mac:](https://docs.docker.com/engine/installation/mac/#/docker-for-mac)
+* for [linux:](https://docs.docker.com/engine/installation/linux/ubuntulinux/)
+
+Clone repositories including the sample mouse brain data:
+
+    git clone https://github.com/carlohamalainen/volgenmodel-nipype.git
+    cd volgenmodel-nipype/docker
+    git clone https://github.com/carlohamalainen/volgenmodel-fast-example.git # about 96Mb
+
+open a shell in the docker folder and run:
+
+    docker build --no-cache -t='carlo/volgenmodel-nipype' .
+    docker run -i -t carlo/volgenmodel-nipype /bin/bash /opt/go.sh
+
+it should run now :)
+
+The final model should look like this:
+
+![mouse model triplanar](https://raw.githubusercontent.com/carlohamalainen/volgenmodel-fast-example/master/model-2016-01-09.png)
 
 
