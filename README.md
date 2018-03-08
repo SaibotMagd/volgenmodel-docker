@@ -14,7 +14,13 @@ Clone code and test data:
 ```
 git clone https://github.com/CAIsr/volgenmodel-nipype.git
 git clone https://github.com/CAIsr/volgenmodel-fast-example.git
-```    
+```
+
+install miniconda:
+```
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+```
 
 # Run in docker (currently not working)
 Install the Docker Engine: 
