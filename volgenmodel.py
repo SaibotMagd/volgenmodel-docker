@@ -867,7 +867,8 @@ def make_workflow():
 
 if __name__ == '__main__':
     workflow = make_workflow()
-    workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 32})
+    workflow.run(plugin='Linear')
+    # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 32})
     # workflow.run(plugin='PBSGraph',
     #              plugin_args=dict(
     #                  qsub_args='-A UQ-CAI -l nodes=1,mem=2gb,vmem=2gb,walltime=02:00:00',
