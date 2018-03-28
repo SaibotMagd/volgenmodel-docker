@@ -204,6 +204,8 @@ def make_workflow():
 
     FAST_EXAMPLE_BASE_DIR = str('../volgenmodel-fast-example')
     # Top level workflow.
+    # test sdf
+
     workflow = pe.Workflow(name="workflow")
 
     # FIXME
