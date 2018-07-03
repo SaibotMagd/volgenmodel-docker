@@ -2,12 +2,18 @@
 volgenmodel-nipype is the port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to [Nipype](https://github.com/nipy/nipype). It creates nonlinear models from a series of input MINC files.
 
 # Run
+## In Windows Subsystem for Linux and Ubuntu 16.04
+
 Install minc: https://bic-mni.github.io
 ```bash
     wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
     sudo apt-get install libc6 libstdc++6 imagemagick perl
     sudo dpkg -i minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
     sudo apt-get install libgl1-mesa-glx libglu1-mesa
+    rm minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
+
+    vi .bashrc
+    source /opt/minc/1.9.16/minc-toolkit-config.sh
 ```
 
 Clone code and test-data:    
@@ -24,11 +30,18 @@ bash Miniconda3-latest-Linux-x86_64.sh
 
 start new terminal and install packages required:
 ```bash
-pip install nipype
+conda install --channel conda-forge nipype
 ```
 
-run volgenmodel with the test data:
+add additonal scripts to PATH
 ```bash
+cd volgenmodel-nipype/extra-scripts
+echo "export PATH="`pwd -P`":\$PATH" >> ~/.bashrc
+```
+
+start new temrinal and run volgenmodel with the test data:
+```bash
+cd volgenmodel-nipype/
 python3 volgenmodel.py
 ```
 
@@ -115,7 +128,7 @@ The workflow for a small 3-stage model is:
 The final output is in ```$FAST_EXAMPLE_BASE_DIR/volgenmodel_final_output```.
 
 # Run in docker (currently not working)
-Install the Docker Engine: 
+Install the Docker Engine:
 * for [windows:](https://docs.docker.com/engine/installation/windows/#/docker-for-windows)
 * for [mac:](https://docs.docker.com/engine/installation/mac/#/docker-for-mac)
 * for [linux:](https://docs.docker.com/engine/installation/linux/ubuntulinux/)
@@ -136,5 +149,3 @@ it should run now :)
 The final model should look like this:
 
 ![mouse model triplanar](https://raw.githubusercontent.com/carlohamalainen/volgenmodel-fast-example/master/model-2016-01-09.png)
-
-
