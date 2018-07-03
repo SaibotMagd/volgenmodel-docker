@@ -38,6 +38,12 @@ cd volgenmodel-nipype/extra-scripts
 echo "export PATH="`pwd -P`":\$PATH" >> ~/.bashrc
 ```
 
+select /usr/lib/lapack/liblapack.so.3
+```bash
+sudo update-alternatives --config liblapack.so.3
+```
+
+
 start new temrinal and run volgenmodel with the test data:
 ```bash
 cd volgenmodel-nipype/
