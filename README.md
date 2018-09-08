@@ -30,6 +30,7 @@ bash Miniconda3-latest-Linux-x86_64.sh
 start new terminal and install packages required:
 ```bash
 conda install --channel conda-forge nipype
+pip install pydot
 ```
 
 add additonal scripts to PATH
