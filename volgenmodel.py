@@ -730,6 +730,9 @@ def make_workflow():
 
         workflow.connect(preprocess_normalise, 'output_file', resample, 'input_file')
 
+        # Note: we don't explicitly use 'output_grids' from this node, so we
+        # have to set remove_unnecessary_outputs to False in the workflow object,
+        # otherwise Nipype will remove them and the resample nodes will fail.
         workflow.connect(xfmconcat, 'output_file',  resample, 'transformation')
 
         workflow.connect(voliso,               'output_file', resample, 'like')
@@ -869,6 +872,8 @@ def make_workflow():
 
 if __name__ == '__main__':
     workflow = make_workflow()
+    workflow.config['execution'] = {'remove_unnecessary_outputs': 'False'}
+
     workflow.run(plugin='Linear')
     # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 32})
     # workflow.run(plugin='PBSGraph',
