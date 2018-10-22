@@ -39,11 +39,15 @@ cd volgenmodel-nipype/extra-scripts
 echo "export PATH="`pwd -P`":\$PATH" >> ~/.bashrc
 ```
 
+you need a working octave installed. Somehow the minc libs break octave. Sometimes this fixes it:
 select /usr/lib/lapack/liblapack.so.3
 ```bash
 sudo update-alternatives --config liblapack.so.3
 ```
-
+or load octave using a module:
+```bash
+module load octave/4.2.1
+```
 
 start new temrinal and run volgenmodel with the test data:
 ```bash
