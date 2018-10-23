@@ -203,15 +203,15 @@ def make_workflow():
 
     FAST_EXAMPLE_BASE_DIR = str('../avg_magnitude')
 
-    workflow = pe.Workflow(name="workflow")
+    workflow = pe.Workflow(name="workflow-awoonga")
 
     workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 
     infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, '*/m_composer_echo_1_merged_maths*mnc')))
 
-    datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_mouse')
+    datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource')
     datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
-    datasource.inputs.template = 'mouse*.mnc'
+    datasource.inputs.template = '*/m_composer_echo_1_merged_maths*mnc'
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, str('volgenmodel_final_output')))
@@ -647,13 +647,12 @@ def make_workflow():
 
             modxfm = nlpfit
 
-        # average xfms
+        # <editor-fold desc="average xfms">
         xfmavg = pe.Node(
                         interface=XfmAvg(),
                                     # input_files=modxfm,
                                     # output_file=avgxfm),
                         name='xfmavg_' + snum_txt)
-
 
         if end_stage != 'lin':
             workflow.connect(nlpfit, 'output_grid', xfmavg, 'input_grid_files')
@@ -664,7 +663,6 @@ def make_workflow():
             xfmavg.interface.inputs.ignore_nonlinear = True
         else:
             xfmavg.interface.inputs.ignore_linear = True
-
 
         # invert model xfm 
         xfminvert = pe.MapNode(
@@ -684,9 +682,9 @@ def make_workflow():
 
         workflow.connect(xfminvert, 'output_file', merge_xfm, 'in1')
         workflow.connect(xfmavg,    'output_file', merge_xfm, 'in2')
+        # </editor-fold>
 
-        # Collect grid f iles of xfminvert and xvmavg. This is in two steps.
-        #
+        # <editor-fold desc="Collect grid files of xfminvert and xvmavg. This is in two steps.">
         # 1. Merge MapNode results. 
         merge_xfm_mapnode_result = pe.Node(
                             interface=utils.Merge(1),
@@ -710,8 +708,9 @@ def make_workflow():
         workflow.connect(merge_xfm, 'out', xfmconcat, 'input_files')
 
         workflow.connect(merge_xfmavg_and_step1, 'out', xfmconcat, 'input_grid_files')
+        # </editor-fold>
 
-        # Resample. The first stage (snum == 0) does not involve grid files.
+        # <editor-fold desc="Resample. The first stage (snum == 0) does not involve grid files.">
         if snum == 0:
             resample = pe.MapNode(
                                 interface=Resample(sinc_interpolation=True),
@@ -770,8 +769,9 @@ def make_workflow():
                                     name='pik_check_iavg_' + snum_txt)
 
             workflow.connect(bigaverage, 'output_file', pik_check_iavg, 'input_file')
+        # </editor-fold>
 
-        # do symmetric averaging if required
+        # <editor-fold desc="Do symmetric averaging if required">
         if opt['symmetric']:
             # symxfm = os.path.join(cworkdir, 'model.sym.xfm')
             # symfile = os.path.join(cworkdir, 'model.iavg-short.mnc')
@@ -816,8 +816,9 @@ def make_workflow():
                                     name='volsymm_on_short_' + snum_txt)
 
             workflow.connect(bigaverage, 'output_file', volsymm_on_short, 'input_file')
+        # </editor-fold>
 
-        # We finally have the stage model.
+        # <editor-fold desc="We finally have the stage model.">
         stage_model = volsymm_on_short
 
         if opt['check']:
@@ -833,9 +834,9 @@ def make_workflow():
                                         name='pik_on_stage_model_' + snum_txt)
 
             workflow.connect(stage_model, 'output_file', pik_on_stage_model, 'input_file')
+        # </editor-fold>
 
-
-        # if on last step, copy model to $opt{'output_model'}
+        # <editor-fold desc="if on last step, copy model to $opt{'output_model'}">
         if snum == len(fit_stages) - 1:
             workflow.connect(stage_model, 'output_file', datasink, 'model')
 
@@ -859,6 +860,7 @@ def make_workflow():
                 else:
                     # do_cmd('cp -f %s %s' % (istdfile, opt['output_stdev'],))
                     workflow.connect(bigaverage, 'sd_file', datasink, 'stdev') # we ignore opt['output_stdev']
+        # </editor-fold>
 
         cmodel = stage_model
 
@@ -869,12 +871,12 @@ if __name__ == '__main__':
     workflow = make_workflow()
 
     # workflow.run(plugin='Linear')
-    workflow.run(plugin='MultiProc', plugin_args={'n_procs': 32})
-    # workflow.run(plugin='PBSGraph',
-    #              plugin_args=dict(
-    #                  qsub_args='-A UQ-CAI -l nodes=1,mem=2gb,vmem=2gb,walltime=02:00:00',
-    #                  dont_resubmit_completed_jobs=True,
-    #              )
-    #              )
+    # workflow.run(plugin='MultiProc', plugin_args={'n_procs': 24})
+    workflow.run(plugin='PBSGraph',
+                 plugin_args=dict(
+                     qsub_args='-A UQ-CAI -l nodes=1:ppn=1,mem=4gb,vmem=4gb,walltime=02:00:00',
+                     dont_resubmit_completed_jobs=True,
+                 )
+                 )
 
     print('done')
