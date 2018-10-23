@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Literal translation of the Perl script https://github.com/andrewjanke/volgenmodel
 # to Python and using Nipype interfaces where possible.
 
@@ -200,13 +201,13 @@ def make_workflow():
                      { str('step'):  2, str('blur_fwhm'):  1, str('iterations'): 10},
                    ]
 
-    FAST_EXAMPLE_BASE_DIR = str('../volgenmodel-fast-example')
+    FAST_EXAMPLE_BASE_DIR = str('../avg_magnitude')
 
     workflow = pe.Workflow(name="workflow")
 
     workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 
-    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, 'mouse*mnc')))
+    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, '*/m_composer_echo_1_merged_maths*mnc')))
 
     datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource_mouse')
     datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
@@ -863,11 +864,12 @@ def make_workflow():
 
     return workflow
 
+
 if __name__ == '__main__':
     workflow = make_workflow()
 
-    workflow.run(plugin='Linear')
-    # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 32})
+    # workflow.run(plugin='Linear')
+    workflow.run(plugin='MultiProc', plugin_args={'n_procs': 32})
     # workflow.run(plugin='PBSGraph',
     #              plugin_args=dict(
     #                  qsub_args='-A UQ-CAI -l nodes=1,mem=2gb,vmem=2gb,walltime=02:00:00',
