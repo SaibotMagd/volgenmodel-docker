@@ -1,7 +1,5 @@
 # Literal translation of the Perl script https://github.com/andrewjanke/volgenmodel
 # to Python and using Nipype interfaces where possible.
-#
-# In progress: use Nipype workflow.
 
 # Author: Carlo Hamalainen <carlo@carlo-hamalainen.net>
 # Minor Edits: Isshaa Aarya and Steffen Bollmann <Steffen.Bollmann@live.de>
@@ -203,14 +201,8 @@ def make_workflow():
                    ]
 
     FAST_EXAMPLE_BASE_DIR = str('../volgenmodel-fast-example')
-    # Top level workflow.
-    # test sdf
 
     workflow = pe.Workflow(name="workflow")
-
-    # FIXME
-    # Just for testing, tell Nipype to keep all outputs.
-    # workflow.config['execution'] = {'remove_unnecessary_outputs': 'false'}
 
     workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 
@@ -718,22 +710,23 @@ def make_workflow():
 
         workflow.connect(merge_xfmavg_and_step1, 'out', xfmconcat, 'input_grid_files')
 
-        # resample
-        resample = pe.MapNode(
-                            interface=Resample(sinc_interpolation=True),
-                                        # transformation=resxfm,
-                                        # like=isomodel_base + ".mnc",
-                                        # input_file=resfiles[f],
-                                        # output_file=rsmpl[f]),
-                            name='resample_' + snum_txt,
-                            iterfield=['input_file', 'transformation'])
+        # Resample. The first stage (snum == 0) does not involve grid files.
+        if snum == 0:
+            resample = pe.MapNode(
+                                interface=Resample(sinc_interpolation=True),
+                                name='resample_' + snum_txt,
+                                iterfield=['input_file', 'transformation'])
+        else:
+            resample = pe.MapNode(
+                                interface=Resample(sinc_interpolation=True),
+                                name='resample_' + snum_txt,
+                                iterfield=['input_file', 'transformation', 'input_grid_files'])
 
-        workflow.connect(preprocess_normalise, 'output_file', resample, 'input_file')
+        workflow.connect(preprocess_normalise, 'output_file',  resample, 'input_file')
+        workflow.connect(xfmconcat,            'output_file',  resample, 'transformation')
 
-        # Note: we don't explicitly use 'output_grids' from this node, so we
-        # have to set remove_unnecessary_outputs to False in the workflow object,
-        # otherwise Nipype will remove them and the resample nodes will fail.
-        workflow.connect(xfmconcat, 'output_file',  resample, 'transformation')
+        if snum > 0:
+            workflow.connect(xfmconcat, 'output_grids', resample, 'input_grid_files')
 
         workflow.connect(voliso,               'output_file', resample, 'like')
 
@@ -872,7 +865,6 @@ def make_workflow():
 
 if __name__ == '__main__':
     workflow = make_workflow()
-    workflow.config['execution'] = {'remove_unnecessary_outputs': 'False'}
 
     workflow.run(plugin='Linear')
     # workflow.run(plugin='MultiProc', plugin_args={'n_procs' : 32})
@@ -884,4 +876,3 @@ if __name__ == '__main__':
     #              )
 
     print('done')
-    # TODO: put all code in seperate py files.
