@@ -41,7 +41,8 @@ import pickle
 import gzip
 
 
-def IdentityFile(input_file):
+# <editor-fold desc="Functions">
+def identity_file(input_file):
     # Adapted from: http://nipy.org/nipype/users/function_interface.html
 
     import os
@@ -52,6 +53,7 @@ def IdentityFile(input_file):
 
     return os.path.abspath(output_file)
 
+
 def load_pklz(f):
     return pickle.load(gzip.open(f))
 
@@ -60,6 +62,7 @@ def _calc_threshold_blur_preprocess(input_file):
     from volgenmodel import get_step_sizes
     (step_x, step_y, step_z) = get_step_sizes(input_file)
     return abs(step_x + step_y + step_z)
+
 
 calc_threshold_blur_preprocess = utils.Function(
                                         input_names=['input_file'],
@@ -72,10 +75,12 @@ def _calc_initial_model_fwhm3d(input_file):
     (xstep, ystep, zstep) = get_step_sizes(input_file)
     return (abs(xstep*4), abs(ystep*4), abs(zstep*4))
 
+
 calc_initial_model_fwhm3d = utils.Function(
                                         input_names=['input_file'],
                                         output_names=['fwhm3d'],
                                         function=_calc_initial_model_fwhm3d)
+
 
 def _write_stage_conf_file(snum, snum_txt, conf, end_stage):
     assert snum is not None
@@ -108,10 +113,12 @@ def _write_stage_conf_file(snum, snum_txt, conf, end_stage):
 
     return conf_fname
 
+
 write_stage_conf_file = utils.Function(
                                     input_names=['snum', 'snum_txt', 'conf', 'end_stage'],
                                     output_names=['conf_fname'],
                                     function=_write_stage_conf_file)
+
 
 def to_perl_syntax(d):
     """
@@ -121,6 +128,7 @@ def to_perl_syntax(d):
 
     return str(d).replace(':', ' => ').replace('[', '(').replace(']', ')')
 
+
 def from_perl_syntax(d):
     """
     Essentially the inverse of to_perl_syntax() but we also nuke the
@@ -128,6 +136,7 @@ def from_perl_syntax(d):
     """
 
     return str(d).replace(' => ', ':').replace('(', '[').replace(')', ']').replace('@', '')
+
 
 def do_cmd(cmd):
     """
@@ -152,7 +161,7 @@ def do_cmd(cmd):
     else:
         assert False, 'Stuff on stderr: ' + str(stderr)
 
-        
+
 def get_step_sizes(mincfile):
     """
     Get the x, y, and z step sizes from a Minc file.
@@ -167,6 +176,7 @@ def get_step_sizes(mincfile):
     zstep = float(do_cmd(zcmd).split()[0])
  
     return (xstep, ystep, zstep)
+
 
 def read_conf_array(opt):
     """
@@ -190,20 +200,13 @@ def read_conf_array(opt):
         conf = default_conf
 
     return conf
+# </editor-fold>
+
 
 def make_workflow():
-    default_conf = [ { str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
-                     { str('step'): 16, str('blur_fwhm'):  8, str('iterations'): 20},
-                     { str('step'): 12, str('blur_fwhm'):  6, str('iterations'): 20},
-                     { str('step'):  8, str('blur_fwhm'):  4, str('iterations'): 20},
-                     { str('step'):  6, str('blur_fwhm'):  3, str('iterations'): 20},
-                     { str('step'):  4, str('blur_fwhm'):  2, str('iterations'): 10},
-                     { str('step'):  2, str('blur_fwhm'):  1, str('iterations'): 10},
-                   ]
-
     FAST_EXAMPLE_BASE_DIR = str('../avg_magnitude')
 
-    workflow = pe.Workflow(name="workflow-awoonga")
+    workflow = pe.Workflow(name="workflow-no-robust")
 
     workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
 
@@ -216,28 +219,30 @@ def make_workflow():
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, str('volgenmodel_final_output')))
 
-    opt = { 'verbose': 0,
-            'clobber': 0,
-            'fake': 0,
-            'check': 1,
-            'clean': 0,
-            'keep_tmp': 0,
-            # 'workdir': os.path.join(os.getcwd(), 'work'), # "./$me-work",
-             'batch': 0,
-            'symmetric': 0,
-            'symmetric_dir': 'x',
-            'normalise': 1,
-            'model_norm_thresh': 0.1,
-            'model_min_step': 0.5,
-            'pad': 10,
-            'iso': 1,
-            'config_file': None,
-            'linmethod': 'bestlinreg',
-            'init_model': None,
-            'output_model': None,
-            'output_stdev': None,
-            'fit_stages': 'lin,lin,lin,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3',
-          }
+    # opt = { 'verbose': 0,
+    #         'clobber': 0,
+    #         'fake': 0,
+    #         'check': 1,
+    #         'clean': 0,
+    #         'keep_tmp': 0,
+    #         # 'workdir': os.path.join(os.getcwd(), 'work'), # "./$me-work",
+    #          'batch': 0,
+    #         'symmetric': 0,
+    #         'symmetric_dir': 'x',
+    #         'normalise': 1,
+    #         'model_norm_thresh': 0.1,
+    #         'model_min_step': 0.5,
+    #         'pad': 10,
+    #         'iso': 1,
+    #         'config_file': None,
+    #         'linmethod': 'bestlinreg',
+    #         'init_model': None,
+    #         'output_model': None,
+    #         'output_stdev': None,
+    #         'fit_stages': 'lin,lin,lin,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3',
+    #       }
+
+    opt = dict()
 
     # from create-model.sh
     opt['symmetric'] = 1
@@ -266,7 +271,7 @@ def make_workflow():
     fit_stages = opt['fit_stages'].split(',')
     fit_stages = list(map(eval_to_int, fit_stages))
 
-    # check for infiles and create files array
+    # <editor-fold desc="check for infiles and create files array">
     if opt['verbose']: print("+++ INFILES\n")
 
     dirs = [None] * len(infiles)
@@ -297,8 +302,9 @@ def make_workflow():
         c += 1
 
     conf = read_conf_array(opt)
+    # </editor-fold>
 
-    # sanity check for fit config
+    # <editor-fold desc="sanity check for fit config">
     if fit_stages[-1] > (len(conf) - 1):
        assert False, ( "Something is amiss with fit config, requested a "
                        "fit step ($fit_stages[-1]) beyond what is defined in the "
@@ -319,9 +325,9 @@ def make_workflow():
 
     #workflow.connect(renameFiles, 'out_file', preprocess_volcentre, 'input_file')
     workflow.connect( datasource, 'outfiles', preprocess_volcentre, 'input_file')
+    # </editor-fold>
 
-
-    # normalise  
+    # <editor-fold desc="normalise">
     if opt['normalise']:
         preprocess_threshold_blur = pe.MapNode(
                                         interface=deepcopy(calc_threshold_blur_preprocess), # Beware! Need deepcopy since calc_threshold_blur_preprocess is not a constructor!
@@ -346,7 +352,7 @@ def make_workflow():
         preprocess_normalise_id = utils.Function(
                                             input_names=['input_file'],
                                             output_names=['output_file'],
-                                            function=IdentityFile,
+                                            function=identity_file,
                                             )
 
         preprocess_normalise = pe.MapNode(
@@ -355,9 +361,10 @@ def make_workflow():
                                     iterfield=['input_file'])
 
     workflow.connect(preprocess_volcentre, 'output_file', preprocess_normalise, 'input_file')
+    # </editor-fold>
 
-    # extend/pad
-    if opt['pad'] > 0:  
+    # <editor-fold desc="extend/pad">
+    if opt['pad'] > 0:
         #smoothPadValue = 2
         preprocess_volpad = pe.MapNode(
                                 interface=Volpad(
@@ -371,7 +378,7 @@ def make_workflow():
         preprocess_volpad_id = utils.Function(
                                             input_names=['input_file'],
                                             output_names=['output_file'],
-                                            function=IdentityFile,
+                                            function=identity_file,
                                             )
 
         preprocess_volpad = pe.MapNode(
@@ -380,9 +387,10 @@ def make_workflow():
                                     iterfield=['input_file'])
 
     workflow.connect(preprocess_normalise, 'output_file', preprocess_volpad, 'input_file')
+    # </editor-fold>
 
-    # isotropic resampling
-    if opt['iso']:  
+    # <editor-fold desc="isotropic resampling">
+    if opt['iso']:
         preprocess_voliso = pe.MapNode(
                                     interface=Voliso(avgstep=True), # output_file=isofile),
                                     name='preprocess_voliso',
@@ -391,7 +399,7 @@ def make_workflow():
         preprocess_voliso_id = utils.Function(
                                             input_names=['input_file'],
                                             output_names=['output_file'],
-                                            function=IdentityFile,
+                                            function=identity_file,
                                             )
 
         preprocess_voliso = pe.MapNode(
@@ -400,8 +408,9 @@ def make_workflow():
                                     iterfield=['input_file'])
 
     workflow.connect(preprocess_volpad, 'output_file', preprocess_voliso, 'input_file')
+    # </editor-fold>
 
-    # checkfile
+    # <editor-fold desc="checkfile">
     if opt['check']:
         preprocess_pik = pe.MapNode(
                                 interface=Pik(
@@ -413,7 +422,7 @@ def make_workflow():
         preprocess_pik_id = utils.Function(
                                     input_names=['input_file'],
                                     output_names=['output_file'],
-                                    function=IdentityFile,
+                                    function=identity_file,
                                     )
 
         preprocess_pik = pe.MapNode(
@@ -422,10 +431,10 @@ def make_workflow():
                                 iterfield=['input_file'])
 
     workflow.connect(preprocess_volpad, 'output_file', preprocess_pik, 'input_file')
+    # </editor-fold>
 
-
-    # setup the initial model
-    if opt['init_model'] is not None:  
+    # <editor-fold desc="setup the initial model">
+    if opt['init_model'] is not None:
         # cmodel = opt['init_model']
         raise NotImplemented
         # To do this, make a data grabber that sends the MNC file to
@@ -459,9 +468,9 @@ def make_workflow():
                                     name='identity_transformation')
 
     workflow.connect(initial_model, 'output_file', identity_transformation, 'like')
+    # </editor-fold>
 
-    # get last linear stage from fit config
-
+    # <editor-fold desc="get last linear stage from fit config">
     s = None
     end_stage = None
 
@@ -477,8 +486,10 @@ def make_workflow():
     print("+++ Fitting")
 
     last_linear_stage_xfm_node = None
+    # </editor-fold>
 
     for snum in range(len(fit_stages)):
+        # <editor-fold desc="Preprocessing">
         snum_txt = None
         end_stage = None
         # f = None
@@ -568,8 +579,9 @@ def make_workflow():
                         name='mincmath_' + snum_txt)
 
         workflow.connect(blur, 'output_file', mincmath, 'input_files')
+        # </editor-fold>
 
-        # linear or nonlinear fit
+        # <editor-fold desc="linear or nonlinear fit">
         if end_stage == 'lin':
             print("---Linear fit---")
         else:
@@ -586,8 +598,9 @@ def make_workflow():
                 write_conf.inputs.snum_txt   = snum_txt
                 write_conf.inputs.conf       = conf
                 write_conf.inputs.end_stage  = end_stage
+        # </editor-fold>
 
-        # register each file in the input series
+        # <editor-fold desc="register each file in the input series">
         if end_stage == 'lin':
             assert opt['linmethod'] == 'bestlinreg'
             bestlinreg = pe.MapNode(
@@ -646,6 +659,7 @@ def make_workflow():
             workflow.connect(xfmconcat, 'output_grids', nlpfit, 'input_grid_files')
 
             modxfm = nlpfit
+        # </editor-fold>
 
         # <editor-fold desc="average xfms">
         xfmavg = pe.Node(
@@ -746,7 +760,7 @@ def make_workflow():
         bigaverage = pe.Node(
                             interface=BigAverage(
                                             output_float=True,
-                                            robust=True),
+                                            robust=False),
                                             # tmpdir=os.path.join(opt['workdir'], 'tmp'),
                                             # sd_file=istdfile,
                                             # input_files=rsmpl,
@@ -808,7 +822,7 @@ def make_workflow():
             volsymm_on_short_id = utils.Function(
                                     input_names=['input_file'],
                                     output_names=['output_file'],
-                                    function=IdentityFile,
+                                    function=identity_file,
                                     )
 
             volsymm_on_short = pe.Node(
@@ -860,23 +874,23 @@ def make_workflow():
                 else:
                     # do_cmd('cp -f %s %s' % (istdfile, opt['output_stdev'],))
                     workflow.connect(bigaverage, 'sd_file', datasink, 'stdev') # we ignore opt['output_stdev']
-        # </editor-fold>
-
         cmodel = stage_model
+        # </editor-fold>
 
     return workflow
 
 
 if __name__ == '__main__':
     workflow = make_workflow()
+    workflow.config['execution'] = {'remove_unnecessary_outputs': 'False'}
 
     # workflow.run(plugin='Linear')
-    # workflow.run(plugin='MultiProc', plugin_args={'n_procs': 24})
-    workflow.run(plugin='PBSGraph',
-                 plugin_args=dict(
-                     qsub_args='-A UQ-CAI -l nodes=1:ppn=1,mem=4gb,vmem=4gb,walltime=02:00:00',
-                     dont_resubmit_completed_jobs=True,
-                 )
-                 )
+    workflow.run(plugin='MultiProc', plugin_args={'n_procs': 24})
+    # workflow.run(plugin='PBSGraph',
+    #              plugin_args=dict(
+    #                  qsub_args='-A UQ-CAI -l nodes=1:ppn=1,mem=4gb,vmem=4gb,walltime=02:00:00',
+    #                  dont_resubmit_completed_jobs=True,
+    #              )
+    #              )
 
     print('done')
