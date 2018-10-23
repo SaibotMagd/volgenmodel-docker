@@ -204,47 +204,23 @@ def read_conf_array(opt):
 
 
 def make_workflow():
-    FAST_EXAMPLE_BASE_DIR = str('../avg_magnitude')
+    # <editor-fold desc="Parameters">
+    base_dir = str('../avg_magnitude')
 
     workflow = pe.Workflow(name="workflow-no-robust")
 
-    workflow.base_dir = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
+    workflow.base_dir = os.path.abspath(base_dir)
 
-    infiles = sorted(glob.glob(os.path.join(FAST_EXAMPLE_BASE_DIR, '*/m_composer_echo_1_merged_maths*mnc')))
+    infiles = sorted(glob.glob(os.path.join(base_dir, '*/m_composer_echo_1_merged_maths*mnc')))
 
     datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource')
-    datasource.inputs.base_directory = os.path.abspath(FAST_EXAMPLE_BASE_DIR)
+    datasource.inputs.base_directory = os.path.abspath(base_dir)
     datasource.inputs.template = '*/m_composer_echo_1_merged_maths*mnc'
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
-    datasink.inputs.base_directory = os.path.abspath(os.path.join(FAST_EXAMPLE_BASE_DIR, str('volgenmodel_final_output')))
-
-    # opt = { 'verbose': 0,
-    #         'clobber': 0,
-    #         'fake': 0,
-    #         'check': 1,
-    #         'clean': 0,
-    #         'keep_tmp': 0,
-    #         # 'workdir': os.path.join(os.getcwd(), 'work'), # "./$me-work",
-    #          'batch': 0,
-    #         'symmetric': 0,
-    #         'symmetric_dir': 'x',
-    #         'normalise': 1,
-    #         'model_norm_thresh': 0.1,
-    #         'model_min_step': 0.5,
-    #         'pad': 10,
-    #         'iso': 1,
-    #         'config_file': None,
-    #         'linmethod': 'bestlinreg',
-    #         'init_model': None,
-    #         'output_model': None,
-    #         'output_stdev': None,
-    #         'fit_stages': 'lin,lin,lin,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3',
-    #       }
+    datasink.inputs.base_directory = os.path.abspath(os.path.join(base_dir, str('volgenmodel_final_output')))
 
     opt = dict()
-
-    # from create-model.sh
     opt['symmetric'] = 1
     opt['symmetric_dir'] = 'x'
     opt['check'] = 1
@@ -252,7 +228,9 @@ def make_workflow():
     opt['model_norm_thresh'] = 0.1
     opt['model_min_step'] = 0.5
     opt['pad'] = 5
-    # opt['config_file'] = os.path.join(FAST_EXAMPLE_BASE_DIR, 'fit.10-genmodel.conf')
+    opt['iso'] = 1
+    opt['linmethod'] = 'bestlinreg'
+    opt['init_model'] = None
     opt['config_file'] = None
     opt['fit_stages'] = 'lin, 0, 0, 1, 1, 2, 2, 3, 3'
     opt['output_model'] = 'model.mnc'
@@ -260,7 +238,12 @@ def make_workflow():
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
     opt['verbose'] = 1
     opt['clobber'] = 1
+    opt['fake'] = 0
+    opt['clean'] = 0
+    opt['keep_tmp'] = 0
+    # </editor-fold>
 
+    # <editor-fold desc="Setup">
     def eval_to_int(x):
         try:
             return int(x)
@@ -270,6 +253,7 @@ def make_workflow():
     # setup the fit stages
     fit_stages = opt['fit_stages'].split(',')
     fit_stages = list(map(eval_to_int, fit_stages))
+    # </editor-fold>
 
     # <editor-fold desc="check for infiles and create files array">
     if opt['verbose']: print("+++ INFILES\n")
@@ -881,16 +865,12 @@ def make_workflow():
 
 
 if __name__ == '__main__':
-    workflow = make_workflow()
-    workflow.config['execution'] = {'remove_unnecessary_outputs': 'False'}
+    wf = make_workflow()
+    wf.config['execution'] = {'remove_unnecessary_outputs': 'False'}
 
-    # workflow.run(plugin='Linear')
-    workflow.run(plugin='MultiProc', plugin_args={'n_procs': 24})
-    # workflow.run(plugin='PBSGraph',
-    #              plugin_args=dict(
-    #                  qsub_args='-A UQ-CAI -l nodes=1:ppn=1,mem=4gb,vmem=4gb,walltime=02:00:00',
-    #                  dont_resubmit_completed_jobs=True,
-    #              )
-    #              )
+    # wf.run(plugin='Linear')
+    wf.run(plugin='MultiProc', plugin_args={'n_procs': 24})
+    # wf.run(plugin='PBSGraph',plugin_args=dict(
+    #     qsub_args='-A UQ-CAI -l nodes=1:ppn=1,mem=4gb,vmem=4gb,walltime=02:00:00', dont_resubmit_completed_jobs=True))
 
     print('done')
