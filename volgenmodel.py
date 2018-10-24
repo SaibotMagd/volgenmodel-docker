@@ -15,6 +15,7 @@ import nipype.pipeline.engine as pe
 import nipype.interfaces.io as nio
 import nipype.interfaces.utility as utils
 from copy import deepcopy
+import argparse
 
 from nipype.interfaces.minc import  \
         Volcentre,      \
@@ -176,46 +177,36 @@ def get_step_sizes(mincfile):
     zstep = float(do_cmd(zcmd).split()[0])
  
     return (xstep, ystep, zstep)
-
-
-def read_conf_array(opt):
-    """
-    Set up the @conf array.
-    """
-
-    if opt['config_file'] is not None:
-        conf = None
-        exec(from_perl_syntax(open(opt['config_file'], 'r').read()))
-        assert conf is not None
-    else:
-        default_conf = [{ str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
-                        { str('step'): 16, str('blur_fwhm'):  8, str('iterations'): 20},
-                        { str('step'): 12, str('blur_fwhm'):  6, str('iterations'): 20},
-                        { str('step'): 8, str('blur_fwhm'):   4, str('iterations'): 20},
-                        { str('step'): 6, str('blur_fwhm'):   3, str('iterations'): 20},
-                        { str('step'): 4, str('blur_fwhm'):   2, str('iterations'): 10},  
-                        { str('step'): 2, str('blur_fwhm'):   1, str('iterations'): 10},
-                        
-                        ]
-        conf = default_conf
-
-    return conf
 # </editor-fold>
 
 
-def make_workflow():
+def make_workflow(args):
     # <editor-fold desc="Parameters">
-    base_dir = str('../avg_magnitude')
 
-    workflow = pe.Workflow(name="workflow-no-robust")
+    base_dir = str('/gpfs1/scratch/30days/uqsbollm/7T_group_Hippocampus_28QSM/derived/avg_magnitude/')
+    workflow = pe.Workflow(name=args.name+args.run+str(args.ncpus))
+    file_pattern = '*/m_composer_echo_1_merged_maths_mnc_n4.mnc'
+
+    # base_dir = str('../avg_magnitude/')
+    # workflow = pe.Workflow(name="workflow-no-robust")
+    # file_pattern = '*/m_composer_echo_1_merged_maths_mnc.mnc'
 
     workflow.base_dir = os.path.abspath(base_dir)
 
-    infiles = sorted(glob.glob(os.path.join(base_dir, '*/m_composer_echo_1_merged_maths*mnc')))
+    infiles = sorted(glob.glob(os.path.join(base_dir, file_pattern)))
 
     datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource')
     datasource.inputs.base_directory = os.path.abspath(base_dir)
-    datasource.inputs.template = '*/m_composer_echo_1_merged_maths*mnc'
+    datasource.inputs.template = file_pattern
+
+    subject_list = ['20150514_1233_S10_DS', '20150515_1206_S04_NO', '20150519_1156_S02_RP',
+                    '20150521_1019_S06_JV', '20150605_1000_S19_AM', '20150605_1305_S27_JR', '20150612_1000_S26_NF',
+                    '20150612_1316_S28_JL', '20150514_1055_S09_JH', '20150515_1034_S11_BS', '20150518_1409_S13_NF',
+                    '20150520_1400_S07_EM', '20150601_1134_S18_NM', '20150605_1057_S24_CA', '20150605_1400_S22_ZS',
+                    '20150612_1055_S15_LS', '20150612_1403_S21_NZ', '20150514_1143_S12_JU', '20150515_1121_S05_JL',
+                    '20150519_1110_S01_SF', '20150520_1451_S17_JC', '20150603_1657_S23_PM', '20150605_1147_S20_BL',
+                    '20150605_1453_S14_NF', '20150612_1147_S25_MP', '20150619_0914_S30_SC']
+
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(os.path.join(base_dir, str('volgenmodel_final_output')))
@@ -232,7 +223,7 @@ def make_workflow():
     opt['linmethod'] = 'bestlinreg'
     opt['init_model'] = None
     opt['config_file'] = None
-    opt['fit_stages'] = 'lin, 0, 0, 1, 1, 2, 2, 3, 3'
+    opt['fit_stages'] = 'lin, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12'
     opt['output_model'] = 'model.mnc'
     opt['output_stdev'] = 'stdev.mnc'
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
@@ -241,9 +232,23 @@ def make_workflow():
     opt['fake'] = 0
     opt['clean'] = 0
     opt['keep_tmp'] = 0
+
+    conf = [{str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
+            {str('step'): 16, str('blur_fwhm'):  8, str('iterations'): 20},
+            {str('step'): 12, str('blur_fwhm'):  6, str('iterations'): 20},
+            {str('step'): 8, str('blur_fwhm'):   4, str('iterations'): 20},
+            {str('step'): 6, str('blur_fwhm'):   3, str('iterations'): 20},
+            {str('step'): 4, str('blur_fwhm'):   2, str('iterations'): 10},
+            {str('step'): 2, str('blur_fwhm'):   1, str('iterations'): 10},
+            {str('step'): 1, str('blur_fwhm'):   0.5, str('iterations'): 10},
+            {str('step'): 0.9, str('blur_fwhm'):   0.45, str('iterations'): 10},
+            {str('step'): 0.8, str('blur_fwhm'):   0.4, str('iterations'): 10},
+            {str('step'): 0.7, str('blur_fwhm'):   0.35, str('iterations'): 10},
+            {str('step'): 0.6, str('blur_fwhm'):   0.3, str('iterations'): 10},
+            {str('step'): 0.5, str('blur_fwhm'):   0.25, str('iterations'): 10}]
     # </editor-fold>
 
-    # <editor-fold desc="Setup">
+    # <editor-fold desc="check for infiles and create files array">
     def eval_to_int(x):
         try:
             return int(x)
@@ -253,9 +258,7 @@ def make_workflow():
     # setup the fit stages
     fit_stages = opt['fit_stages'].split(',')
     fit_stages = list(map(eval_to_int, fit_stages))
-    # </editor-fold>
 
-    # <editor-fold desc="check for infiles and create files array">
     if opt['verbose']: print("+++ INFILES\n")
 
     dirs = [None] * len(infiles)
@@ -285,10 +288,6 @@ def make_workflow():
             print("  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c]))
         c += 1
 
-    conf = read_conf_array(opt)
-    # </editor-fold>
-
-    # <editor-fold desc="sanity check for fit config">
     if fit_stages[-1] > (len(conf) - 1):
        assert False, ( "Something is amiss with fit config, requested a "
                        "fit step ($fit_stages[-1]) beyond what is defined in the "
@@ -300,8 +299,9 @@ def make_workflow():
     #renameFiles.inputs.sd = sub_id
 
     #workflow.connect(datasource, 'outfiles', renameFiles, 'in_file')  
+    # </editor-fold>
 
-    # do pre-processing
+    # <editor-fold desc="do pre-processing nad normalise">
     preprocess_volcentre = pe.MapNode(
                     interface=Volcentre(zero_dircos=True),
                     name='preprocess_volcentre',
@@ -309,9 +309,7 @@ def make_workflow():
 
     #workflow.connect(renameFiles, 'out_file', preprocess_volcentre, 'input_file')
     workflow.connect( datasource, 'outfiles', preprocess_volcentre, 'input_file')
-    # </editor-fold>
 
-    # <editor-fold desc="normalise">
     if opt['normalise']:
         preprocess_threshold_blur = pe.MapNode(
                                         interface=deepcopy(calc_threshold_blur_preprocess), # Beware! Need deepcopy since calc_threshold_blur_preprocess is not a constructor!
@@ -369,6 +367,8 @@ def make_workflow():
                                     interface=preprocess_volpad_id,
                                     name='preprocess_volpad',
                                     iterfield=['input_file'])
+        preprocess_volpad.plugin_args = {'qsub_args': '-A UQ-CAI -l nodes=1:ppn=10,mem=10gb,vmem=10gb,walltime=04:10:00',
+                                      'overwrite': True}
 
     workflow.connect(preprocess_normalise, 'output_file', preprocess_volpad, 'input_file')
     # </editor-fold>
@@ -633,6 +633,10 @@ def make_workflow():
                             name='nlpfit_' + snum_txt,
                             iterfield=['target', 'init_xfm'])
 
+            if args.run == 'PBSGraph':
+                nlpfit.plugin_args = {'qsub_args': '-A UQ-CAI -l nodes=1:ppn=1,mem=10gb,vmem=10gb,walltime=04:10:00',
+                                      'overwrite': True}
+
             workflow.connect(write_conf, 'conf_fname', nlpfit, 'config_file')
 
             workflow.connect(xfmconcat,         'output_file', nlpfit, 'init_xfm')
@@ -865,12 +869,25 @@ def make_workflow():
 
 
 if __name__ == '__main__':
-    wf = make_workflow()
-    wf.config['execution'] = {'remove_unnecessary_outputs': 'False'}
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--name', type=str, default='worflow-awoonga',
+                        help='The workflow name')
+    parser.add_argument('--run', type=str, default='PBSGraph',
+                        help='The execution plugin to use: MultiProc | PBSGraph')
+    parser.add_argument('--ncpus', type=int, default=1,
+                        help='The amount of CPUs used in MultiProc mode')
+    cli_args, unparsed = parser.parse_known_args()
+
+    wf = make_workflow(cli_args)
+    # wf.config['execution'] = {'remove_unnecessary_outputs': 'False'}
 
     # wf.run(plugin='Linear')
-    wf.run(plugin='MultiProc', plugin_args={'n_procs': 24})
-    # wf.run(plugin='PBSGraph',plugin_args=dict(
-    #     qsub_args='-A UQ-CAI -l nodes=1:ppn=1,mem=4gb,vmem=4gb,walltime=02:00:00', dont_resubmit_completed_jobs=True))
+
+    if cli_args.run == 'MultiProc':
+        wf.run(plugin='MultiProc', plugin_args={'n_procs': cli_args.ncpus})
+
+    if cli_args.run == 'PBSGraph':
+        wf.run(plugin='PBSGraph', plugin_args=dict(
+            qsub_args='-A UQ-CAI -l nodes=1:ppn=2,mem=5gb,vmem=5gb,walltime=03:10:00'))
 
     print('done')
