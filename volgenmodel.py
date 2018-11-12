@@ -16,6 +16,7 @@ import nipype.interfaces.io as nio
 import nipype.interfaces.utility as utils
 from copy import deepcopy
 import argparse
+import sys
 
 from nipype.interfaces.minc import  \
         Volcentre,      \
@@ -104,7 +105,7 @@ def _write_stage_conf_file(snum, snum_txt, conf, end_stage):
 
         conf_dicts = []
         for s in range(end_stage + 1):
-            conf_dicts.append({ str('step'): + conf[s][str('step')],
+            conf_dicts.append({str('step'): + conf[s][str('step')],
                                str('blur_fwhm'): conf[s][str('blur_fwhm')],
                                str('iterations'): conf[s][str('iterations')]})
 
@@ -180,16 +181,12 @@ def get_step_sizes(mincfile):
 # </editor-fold>
 
 
-def make_workflow(args):
-    # <editor-fold desc="Parameters">
+def make_workflow(args, opt, conf):
+    # <editor-fold desc="Setup and datasource">
 
-    base_dir = str('/gpfs1/scratch/30days/uqsbollm/7T_group_Hippocampus_28QSM/derived/avg_magnitude/')
+    base_dir = args.input_dir
     workflow = pe.Workflow(name=args.name+args.run+str(args.ncpus))
-    file_pattern = '*/m_composer_echo_1_merged_maths_mnc_n4.mnc'
-
-    # base_dir = str('../avg_magnitude/')
-    # workflow = pe.Workflow(name="workflow-no-robust")
-    # file_pattern = '*/m_composer_echo_1_merged_maths_mnc.mnc'
+    file_pattern = args.input_pattern
 
     workflow.base_dir = os.path.abspath(base_dir)
 
@@ -199,53 +196,10 @@ def make_workflow(args):
     datasource.inputs.base_directory = os.path.abspath(base_dir)
     datasource.inputs.template = file_pattern
 
-    subject_list = ['20150514_1233_S10_DS', '20150515_1206_S04_NO', '20150519_1156_S02_RP',
-                    '20150521_1019_S06_JV', '20150605_1000_S19_AM', '20150605_1305_S27_JR', '20150612_1000_S26_NF',
-                    '20150612_1316_S28_JL', '20150514_1055_S09_JH', '20150515_1034_S11_BS', '20150518_1409_S13_NF',
-                    '20150520_1400_S07_EM', '20150601_1134_S18_NM', '20150605_1057_S24_CA', '20150605_1400_S22_ZS',
-                    '20150612_1055_S15_LS', '20150612_1403_S21_NZ', '20150514_1143_S12_JU', '20150515_1121_S05_JL',
-                    '20150519_1110_S01_SF', '20150520_1451_S17_JC', '20150603_1657_S23_PM', '20150605_1147_S20_BL',
-                    '20150605_1453_S14_NF', '20150612_1147_S25_MP', '20150619_0914_S30_SC']
-
-
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
-    datasink.inputs.base_directory = os.path.abspath(os.path.join(base_dir, str('volgenmodel_final_output')))
+    datasink.inputs.base_directory = os.path.abspath(os.path.join(base_dir, str('workflow_outputs')))
 
-    opt = dict()
-    opt['symmetric'] = 1
-    opt['symmetric_dir'] = 'x'
-    opt['check'] = 1
-    opt['normalise'] = 1
-    opt['model_norm_thresh'] = 0.1
-    opt['model_min_step'] = 0.5
-    opt['pad'] = 5
-    opt['iso'] = 1
-    opt['linmethod'] = 'bestlinreg'
-    opt['init_model'] = None
-    opt['config_file'] = None
-    opt['fit_stages'] = 'lin, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12'
-    opt['output_model'] = 'model.mnc'
-    opt['output_stdev'] = 'stdev.mnc'
-    # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
-    opt['verbose'] = 1
-    opt['clobber'] = 1
-    opt['fake'] = 0
-    opt['clean'] = 0
-    opt['keep_tmp'] = 0
 
-    conf = [{str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
-            {str('step'): 16, str('blur_fwhm'):  8, str('iterations'): 20},
-            {str('step'): 12, str('blur_fwhm'):  6, str('iterations'): 20},
-            {str('step'): 8, str('blur_fwhm'):   4, str('iterations'): 20},
-            {str('step'): 6, str('blur_fwhm'):   3, str('iterations'): 20},
-            {str('step'): 4, str('blur_fwhm'):   2, str('iterations'): 10},
-            {str('step'): 2, str('blur_fwhm'):   1, str('iterations'): 10},
-            {str('step'): 1, str('blur_fwhm'):   0.5, str('iterations'): 10},
-            {str('step'): 0.9, str('blur_fwhm'):   0.45, str('iterations'): 10},
-            {str('step'): 0.8, str('blur_fwhm'):   0.4, str('iterations'): 10},
-            {str('step'): 0.7, str('blur_fwhm'):   0.35, str('iterations'): 10},
-            {str('step'): 0.6, str('blur_fwhm'):   0.3, str('iterations'): 10},
-            {str('step'): 0.5, str('blur_fwhm'):   0.25, str('iterations'): 10}]
     # </editor-fold>
 
     # <editor-fold desc="check for infiles and create files array">
@@ -573,15 +527,15 @@ def make_workflow(args):
 
             # create nlin fit config
             if end_stage != 'lin':
-                write_conf = pe.Node(
-                                    interface=deepcopy
-(write_stage_conf_file), # Beware! Need deepcopy since write_stage_conf_file is not a constructor!
-                                    name='write_conf_' + snum_txt)
+                write_conf = pe.Node(interface=deepcopy(write_stage_conf_file),
+                                     name='write_conf_' + snum_txt)
+                # Beware! Need deepcopy since write_stage_conf_file is not a constructor!
 
-                write_conf.inputs.snum       = snum
-                write_conf.inputs.snum_txt   = snum_txt
-                write_conf.inputs.conf       = conf
-                write_conf.inputs.end_stage  = end_stage
+                write_conf.inputs.snum = snum
+                write_conf.inputs.snum_txt = snum_txt
+                write_conf.inputs.conf = conf
+                write_conf.inputs.end_stage = end_stage
+                write_conf.run_without_submitting = True
         # </editor-fold>
 
         # <editor-fold desc="register each file in the input series">
@@ -870,24 +824,58 @@ def make_workflow(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--name', type=str, default='worflow-awoonga',
+    parser.add_argument('--name', type=str, default='workflow',
                         help='The workflow name')
     parser.add_argument('--run', type=str, default='PBSGraph',
                         help='The execution plugin to use: MultiProc | PBSGraph')
     parser.add_argument('--ncpus', type=int, default=1,
                         help='The amount of CPUs used in MultiProc mode')
+    parser.add_argument('--input_dir', type=str, default='../fast-example',
+                        help='The input directory')
+    parser.add_argument('--input_pattern', type=str, default='*mouse*.mnc',
+                        help='The regular expression to find input files in the input directory')
+
     cli_args, unparsed = parser.parse_known_args()
 
-    wf = make_workflow(cli_args)
-    # wf.config['execution'] = {'remove_unnecessary_outputs': 'False'}
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+    args = parser.parse_args()
 
-    # wf.run(plugin='Linear')
+    options = dict()
+    options['symmetric'] = 0
+    options['symmetric_dir'] = 'x'
+    options['check'] = 1
+    options['normalise'] = 1
+    options['model_norm_thresh'] = 0.1
+    options['model_min_step'] = 0.5
+    options['pad'] = 5
+    options['iso'] = 1
+    options['linmethod'] = 'bestlinreg'
+    options['init_model'] = None
+    options['config_file'] = None
+    options['fit_stages'] = 'lin, 0, 1'
+    options['output_model'] = 'model.mnc'
+    options['output_stdev'] = 'stdev.mnc'
+    # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
+    options['verbose'] = 1
+    options['clobber'] = 1
+    options['fake'] = 0
+    options['clean'] = 0
+    options['keep_tmp'] = 0
+
+    configuration = [{str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
+                     {str('step'): 16, str('blur_fwhm'): 8, str('iterations'): 20}]
+
+    wf = make_workflow(cli_args, options, configuration)
 
     if cli_args.run == 'MultiProc':
         wf.run(plugin='MultiProc', plugin_args={'n_procs': cli_args.ncpus})
 
     if cli_args.run == 'PBSGraph':
-        wf.run(plugin='PBSGraph', plugin_args=dict(
-            qsub_args='-A UQ-CAI -l nodes=1:ppn=2,mem=5gb,vmem=5gb,walltime=03:10:00'))
+        wf.run(plugin='PBSGraph', plugin_args={
+            'qsub_args': '-A UQ-CAI -l nodes=1:ppn=1,mem=1gb,vmem=1gb,walltime=00:10:00',
+            'max_jobs': '10',
+            'dont_resubmit_completed_jobs': True})
 
     print('done')
