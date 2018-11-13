@@ -184,20 +184,20 @@ def get_step_sizes(mincfile):
 def make_workflow(args, opt, conf):
     # <editor-fold desc="Setup and datasource">
 
-    base_dir = args.input_dir
-    workflow = pe.Workflow(name=args.name+args.run+str(args.ncpus))
+    workflow = pe.Workflow(name='workflow_temp_'+args.name+args.run+str(args.ncpus))
     file_pattern = args.input_pattern
 
-    workflow.base_dir = os.path.abspath(base_dir)
+    workflow.base_dir = os.path.abspath(args.input_dir)
 
-    infiles = sorted(glob.glob(os.path.join(base_dir, file_pattern)))
+    infiles = sorted(glob.glob(os.path.join(args.input_dir, file_pattern)))
 
     datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource')
-    datasource.inputs.base_directory = os.path.abspath(base_dir)
+    datasource.inputs.base_directory = os.path.abspath(args.input_dir)
     datasource.inputs.template = file_pattern
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
-    datasink.inputs.base_directory = os.path.abspath(os.path.join(base_dir, str('workflow_outputs')))
+    datasink.inputs.base_directory = os.path.abspath(os.path.join(base_dir,
+                                                                  str('workflow_output_')+args.name+args.run+str(args.ncpus)))
 
 
     # </editor-fold>
@@ -823,17 +823,39 @@ def make_workflow(args, opt, conf):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--name', type=str, default='workflow',
                         help='The workflow name')
-    parser.add_argument('--run', type=str, default='PBSGraph',
-                        help='The execution plugin to use: MultiProc | PBSGraph')
+    parser.add_argument('--run', type=str, default='PBSGraph', choices=['MultiProc', 'PBSGraph'],
+                        help='The execution plugin to use')
     parser.add_argument('--ncpus', type=int, default=1,
                         help='The amount of CPUs used in MultiProc mode')
     parser.add_argument('--input_dir', type=str, default='../fast-example',
                         help='The input directory')
+    parser.add_argument('--work_dir', type=str, default='.',
+                        help='The work directory (for temporary workflow files)')
+    parser.add_argument('--output_dir', type=str, default='.',
+                        help='The output directory (for final models)')
     parser.add_argument('--input_pattern', type=str, default='*mouse*.mnc',
                         help='The regular expression to find input files in the input directory')
+    parser.add_argument('--symmetric', type=bool, default=0, choices=[0, 1],
+                        help='Symmetric averaging on? Will flip template at every level and repeat fit')
+    parser.add_argument('--symmetric_dir', type=str, default='x', choices=['x', 'y', 'z'],
+                        help='Direction for flipping template')
+    parser.add_argument('--check', type=bool, default=0, choices=[0, 1],
+                        help='Write out jpg files to check during model building')
+    parser.add_argument('--normalise', type=bool, default=1, choices=[0, 1],
+                        help='normalise input data via histogram clamping')
+    parser.add_argument('--model_norm_thresh', type=float, default=0.1,
+                        help='thresholding of normalized image to remove background noise')
+    parser.add_argument('--model_min_step', type=float, default=0.9,
+                        help='the mininmal step size of the final model in mm')
+    parser.add_argument('--pad', type=int, default=5,
+                        help='zero padding around image')
+    parser.add_argument('--iso', type=bool, default=1, choices=[0, 1],
+                        help='resample image to be isometric')
+    parser.add_argument('--fit_stages', type=str, default='lin, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13',
+                        help='fit stages to be run')
 
     cli_args, unparsed = parser.parse_known_args()
 
@@ -843,18 +865,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     options = dict()
-    options['symmetric'] = 0
-    options['symmetric_dir'] = 'x'
-    options['check'] = 1
-    options['normalise'] = 1
-    options['model_norm_thresh'] = 0.1
-    options['model_min_step'] = 0.5
-    options['pad'] = 5
-    options['iso'] = 1
+    options['symmetric'] = cli_args.symmetric
+    options['symmetric_dir'] = cli_args.symmetric_dir
+    options['check'] = cli_args.check
+    options['normalise'] = cli_args.normalise
+    options['model_norm_thresh'] = cli_args.model_norm_thresh
+    options['model_min_step'] = cli_args.model_min_step
+    options['pad'] = cli_args.pad
+    options['iso'] = cli_args.iso
     options['linmethod'] = 'bestlinreg'
     options['init_model'] = None
     options['config_file'] = None
-    options['fit_stages'] = 'lin, 0, 1'
+    options['fit_stages'] = cli_args.fit_stages
     options['output_model'] = 'model.mnc'
     options['output_stdev'] = 'stdev.mnc'
     # opt['workdir'] = '/scratch/volgenmodel-fast-example/work'
@@ -864,8 +886,22 @@ if __name__ == '__main__':
     options['clean'] = 0
     options['keep_tmp'] = 0
 
-    configuration = [{str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},
-                     {str('step'): 16, str('blur_fwhm'): 8, str('iterations'): 20}]
+    configuration = [{str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},        # 0
+                     {str('step'): 16, str('blur_fwhm'): 8, str('iterations'): 20},         # 1
+                     {str('step'): 12, str('blur_fwhm'): 6, str('iterations'): 20},         # 2
+                     {str('step'): 10, str('blur_fwhm'): 5, str('iterations'): 20},         # 3
+                     {str('step'): 8, str('blur_fwhm'): 4, str('iterations'): 20},          # 4
+                     {str('step'): 6, str('blur_fwhm'): 3, str('iterations'): 20},          # 5
+                     {str('step'): 5, str('blur_fwhm'): 2.5, str('iterations'): 20},        # 6
+                     {str('step'): 4, str('blur_fwhm'): 2, str('iterations'): 20},          # 7
+                     {str('step'): 3, str('blur_fwhm'): 1.5, str('iterations'): 20},        # 8
+                     {str('step'): 2, str('blur_fwhm'): 1, str('iterations'): 20},          # 9
+                     {str('step'): 1.5, str('blur_fwhm'): 0.75, str('iterations'): 20},     # 10
+                     {str('step'): 1.2, str('blur_fwhm'): 0.6, str('iterations'): 20},      # 11
+                     {str('step'): 1, str('blur_fwhm'): 0.5, str('iterations'): 20},        # 12
+                     {str('step'): 0.9, str('blur_fwhm'): 0.45, str('iterations'): 10},     # 13
+                     {str('step'): 0.8, str('blur_fwhm'): 0.4, str('iterations'): 10},      # 14
+                     {str('step'): 0.7, str('blur_fwhm'): 0.35, str('iterations'): 10}]     # 15
 
     wf = make_workflow(cli_args, options, configuration)
 
