@@ -185,19 +185,17 @@ def make_workflow(args, opt, conf):
     # <editor-fold desc="Setup and datasource">
 
     workflow = pe.Workflow(name='workflow_temp_'+args.name+args.run+str(args.ncpus))
-    file_pattern = args.input_pattern
+    workflow.base_dir = os.path.abspath(args.work_dir)
 
-    workflow.base_dir = os.path.abspath(args.input_dir)
-
-    infiles = sorted(glob.glob(os.path.join(args.input_dir, file_pattern)))
+    infiles = sorted(glob.glob(os.path.join(args.input_dir, args.input_pattern)))
 
     datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource')
     datasource.inputs.base_directory = os.path.abspath(args.input_dir)
-    datasource.inputs.template = file_pattern
+    datasource.inputs.template = args.input_pattern
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
-    datasink.inputs.base_directory = os.path.abspath(os.path.join(base_dir,
-                                                                  str('workflow_output_')+args.name+args.run+str(args.ncpus)))
+    datasink.inputs.base_directory = os.path.abspath(
+        os.path.join(args.output_dir, str('workflow_output_')+args.name+args.run+str(args.ncpus)))
 
 
     # </editor-fold>
