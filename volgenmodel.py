@@ -187,11 +187,22 @@ def make_workflow(args, opt, conf):
     workflow = pe.Workflow(name='workflow_temp_'+args.name+args.run+str(args.ncpus))
     workflow.base_dir = os.path.abspath(args.work_dir)
 
-    infiles = sorted(glob.glob(os.path.join(args.input_dir, args.input_pattern)))
+    # infiles = sorted(glob.glob(os.path.join(args.input_dir, args.input_pattern)))
 
-    datasource = pe.Node(interface=nio.DataGrabber(sort_filelist=True), name='datasource')
+    # templates = {'outfiles': 'sub-{subject}/ses-{ses_name}/anat/*nii2mnc.mnc'}
+    templates = {'outfiles': args.input_pattern}
+
+    datasource = pe.Node(interface=nio.SelectFiles(templates), name='datasource')
     datasource.inputs.base_directory = os.path.abspath(args.input_dir)
-    datasource.inputs.template = args.input_pattern
+    datasource.inputs.sort_filelist = True
+    # datasource.inputs.ses_name = 'T1'
+    # datasource.inputs.subject = ['045', '197']
+    # datasource.inputs.template = args.input_pattern
+    # datasource.inputs.run = [args.input_pattern_run]
+    # datasource.inputs.subject = [args.input_pattern_subject]
+
+    results = datasource.run()
+    print(results.outputs)
 
     datasink = pe.Node(interface=nio.DataSink(), name="datasink")
     datasink.inputs.base_directory = os.path.abspath(
@@ -210,35 +221,35 @@ def make_workflow(args, opt, conf):
     # setup the fit stages
     fit_stages = opt['fit_stages'].split(',')
     fit_stages = list(map(eval_to_int, fit_stages))
-
-    if opt['verbose']: print("+++ INFILES\n")
-
-    dirs = [None] * len(infiles)
-    files = [None] * len(infiles)
-    fileh = {}
-    sub_id = []
-
-    c = 0
-
-    for z in infiles:
-        dir = None
-        f = None
-
-        c_txt = '%04d' % c
-
-        # check
-        assert os.path.exists(z)
-
-        # set up arrays
-        dirs[c] = os.path.split(z)[0] # &dirname($_);
-        files[c] = c_txt + '-' + os.path.basename(z) # "$c_txt-" . &basename($_);
-        files[c] = files[c].replace('.mnc', '') # =~ s/\.mnc$//;
-        fileh[files[c]] = c
-        sub_id.append(c)
-
-        if opt['verbose']:
-            print("  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c]))
-        c += 1
+    #
+    # if opt['verbose']: print("+++ INFILES\n")
+    #
+    # dirs = [None] * len(infiles)
+    # files = [None] * len(infiles)
+    # fileh = {}
+    # sub_id = []
+    #
+    # c = 0
+    #
+    # for z in infiles:
+    #     dir = None
+    #     f = None
+    #
+    #     c_txt = '%04d' % c
+    #
+    #     # check
+    #     assert os.path.exists(z)
+    #
+    #     # set up arrays
+    #     dirs[c] = os.path.split(z)[0] # &dirname($_);
+    #     files[c] = c_txt + '-' + os.path.basename(z) # "$c_txt-" . &basename($_);
+    #     files[c] = files[c].replace('.mnc', '') # =~ s/\.mnc$//;
+    #     fileh[files[c]] = c
+    #     sub_id.append(c)
+    #
+    #     if opt['verbose']:
+    #         print("  | [{c_txt}] {d} / {f}".format(c_txt=c_txt, d=dirs[c], f=files[c]))
+    #     c += 1
 
     if fit_stages[-1] > (len(conf) - 1):
        assert False, ( "Something is amiss with fit config, requested a "
@@ -387,7 +398,6 @@ def make_workflow(args, opt, conf):
         # Calculate the fhwm3d parameter using the first datasource.
         initial_model_fwhm3d = pe.Node(interface=deepcopy(calc_initial_model_fwhm3d), name='initial_model_fwhm3d') # Beware! Need deepcopy since calc_initial_model_fwhm3d is not a constructor!
         workflow.connect(select_first_datasource, 'out', initial_model_fwhm3d, 'input_file')
-
 
         initial_model = pe.Node(
                             interface=Blur(), # output_file_base=os.path.join(opt['workdir'], '00-init-model')),
@@ -834,9 +844,13 @@ if __name__ == '__main__':
                         help='The work directory (for temporary workflow files)')
     parser.add_argument('--output_dir', type=str, default='.',
                         help='The output directory (for final models)')
-    parser.add_argument('--input_pattern', type=str, default='*mouse*.mnc',
+    parser.add_argument('--input_pattern', type=str, default='*mouse*%02d*%s.mnc',
                         help='The regular expression to find input files in the input directory')
-    parser.add_argument('--symmetric', type=bool, default=0, choices=[0, 1],
+    parser.add_argument('--input_pattern_run', type=str, default='*',
+                        help='The list of runs to be used')
+    parser.add_argument('--input_pattern_subject', type=str, default='*',
+                        help='The list of subjects to be used')
+    parser.add_argument('--symmetric', type=bool, default=1, choices=[0, 1],
                         help='Symmetric averaging on? Will flip template at every level and repeat fit')
     parser.add_argument('--symmetric_dir', type=str, default='x', choices=['x', 'y', 'z'],
                         help='Direction for flipping template')
@@ -846,13 +860,13 @@ if __name__ == '__main__':
                         help='normalise input data via histogram clamping')
     parser.add_argument('--model_norm_thresh', type=float, default=0.1,
                         help='thresholding of normalized image to remove background noise')
-    parser.add_argument('--model_min_step', type=float, default=0.9,
+    parser.add_argument('--model_min_step', type=float, default=0.7,
                         help='the mininmal step size of the final model in mm')
     parser.add_argument('--pad', type=int, default=5,
                         help='zero padding around image')
     parser.add_argument('--iso', type=bool, default=1, choices=[0, 1],
                         help='resample image to be isometric')
-    parser.add_argument('--fit_stages', type=str, default='lin, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13',
+    parser.add_argument('--fit_stages', type=str, default='lin,0,1,2,3,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11',
                         help='fit stages to be run')
 
     cli_args, unparsed = parser.parse_known_args()
@@ -887,24 +901,24 @@ if __name__ == '__main__':
     configuration = [{str('step'): 32, str('blur_fwhm'): 16, str('iterations'): 20},        # 0
                      {str('step'): 16, str('blur_fwhm'): 8, str('iterations'): 20},         # 1
                      {str('step'): 12, str('blur_fwhm'): 6, str('iterations'): 20},         # 2
-                     {str('step'): 10, str('blur_fwhm'): 5, str('iterations'): 20},         # 3
-                     {str('step'): 8, str('blur_fwhm'): 4, str('iterations'): 20},          # 4
-                     {str('step'): 6, str('blur_fwhm'): 3, str('iterations'): 20},          # 5
-                     {str('step'): 5, str('blur_fwhm'): 2.5, str('iterations'): 20},        # 6
-                     {str('step'): 4, str('blur_fwhm'): 2, str('iterations'): 20},          # 7
-                     {str('step'): 3, str('blur_fwhm'): 1.5, str('iterations'): 20},        # 8
-                     {str('step'): 2, str('blur_fwhm'): 1, str('iterations'): 20},          # 9
-                     {str('step'): 1.5, str('blur_fwhm'): 0.75, str('iterations'): 20},     # 10
-                     {str('step'): 1.2, str('blur_fwhm'): 0.6, str('iterations'): 20},      # 11
-                     {str('step'): 1, str('blur_fwhm'): 0.5, str('iterations'): 20},        # 12
-                     {str('step'): 0.9, str('blur_fwhm'): 0.45, str('iterations'): 10},     # 13
-                     {str('step'): 0.8, str('blur_fwhm'): 0.4, str('iterations'): 10},      # 14
-                     {str('step'): 0.7, str('blur_fwhm'): 0.35, str('iterations'): 10}]     # 15
+                     {str('step'): 8, str('blur_fwhm'): 4, str('iterations'): 20},          # 3
+                     {str('step'): 6, str('blur_fwhm'): 3, str('iterations'): 20},          # 4
+                     {str('step'): 4, str('blur_fwhm'): 2, str('iterations'): 10},          # 5
+                     {str('step'): 2, str('blur_fwhm'): 1, str('iterations'): 10},          # 6
+                     {str('step'): 1.5, str('blur_fwhm'): 0.75, str('iterations'): 10},     # 7
+                     {str('step'): 1, str('blur_fwhm'): 0.5, str('iterations'): 5},         # 8
+                     {str('step'): 0.9, str('blur_fwhm'): 0.45, str('iterations'): 5},      # 9
+                     {str('step'): 0.8, str('blur_fwhm'): 0.4, str('iterations'): 5},       # 10
+                     {str('step'): 0.7, str('blur_fwhm'): 0.35, str('iterations'): 5}]      # 11
 
     wf = make_workflow(cli_args, options, configuration)
 
     if cli_args.run == 'MultiProc':
-        wf.run(plugin='MultiProc', plugin_args={'n_procs': cli_args.ncpus})
+        wf.run(plugin='MultiProc', plugin_args={
+            'n_procs': cli_args.ncpus,
+            'memory_gb': 80,
+        }
+               )
 
     if cli_args.run == 'PBSGraph':
         wf.run(plugin='PBSGraph', plugin_args={
