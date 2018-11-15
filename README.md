@@ -52,7 +52,7 @@ module load octave/4.2.1
 start new temrinal and run volgenmodel with the test data:
 ```bash
 cd volgenmodel-nipype/
-python3 volgenmodel.py
+python3 volgenmodel.py --input_dir ../volgenmodel-fast-example
 ```
 
 

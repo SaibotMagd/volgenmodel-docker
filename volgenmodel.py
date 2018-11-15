@@ -834,7 +834,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--name', type=str, default='workflow',
                         help='The workflow name')
-    parser.add_argument('--run', type=str, default='PBSGraph', choices=['MultiProc', 'PBSGraph'],
+    parser.add_argument('--run', type=str, default='MultiProc', choices=['MultiProc', 'PBSGraph'],
                         help='The execution plugin to use')
     parser.add_argument('--ncpus', type=int, default=1,
                         help='The amount of CPUs used in MultiProc mode')
@@ -844,7 +844,7 @@ if __name__ == '__main__':
                         help='The work directory (for temporary workflow files)')
     parser.add_argument('--output_dir', type=str, default='.',
                         help='The output directory (for final models)')
-    parser.add_argument('--input_pattern', type=str, default='*mouse*%02d*%s.mnc',
+    parser.add_argument('--input_pattern', type=str, default='*mouse*.mnc',
                         help='The regular expression to find input files in the input directory')
     parser.add_argument('--input_pattern_run', type=str, default='*',
                         help='The list of runs to be used')
