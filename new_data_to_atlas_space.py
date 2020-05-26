@@ -8,82 +8,161 @@ from nipype.interfaces.minc import  \
         Resample,       \
         BigAverage,     \
         VolSymm
+import argparse
 
-# <editor-fold desc="Parameters">
+def create_workflow(
+        xfm_dir,
+        xfm_pattern,
+        atlas_dir,
+        atlas_pattern,
+        source_dir,
+        source_pattern,
+        work_dir,
+        out_dir,
+        name="new_data_to_atlas_space"
+):
+        wf = Workflow(name=name)
+        wf.base_dir = opj(work_dir)
 
-base_dir = '/gpfs1/scratch/30days/uqsbollm/7T_group_Hippocampus_28QSM'
-source_volgenmodel_dir = base_dir + '/derived/avg_magnitude/workflow/'
-stage_id = '06'
+        datasource_source = Node(
+                interface=DataGrabber(
+                        sort_filelist=True
+                ),
+                name='datasource_source'
+        )
+        datasource_source.inputs.base_directory = os.path.abspath(source_dir)
+        datasource_source.inputs.template = source_pattern
 
-# source_files_to_warp_dir = base_dir + '/derived/avg_magnitude/'
-# file_pattern_input = '*/m_composer_echo_1_merged_maths_mnc_n4.mnc'
-# source_file_name = 'magnitude'
+        datasource_xfm = Node(
+                interface=DataGrabber(
+                        sort_filelist=True
+                ),
+                name='datasource_xfm'
+        )
+        datasource_xfm.inputs.base_directory = os.path.abspath(xfm_dir)
+        datasource_xfm.inputs.template = xfm_pattern
 
-# source_files_to_warp_dir = base_dir + '/derived/qsm_final_STI/'
-# file_pattern_input = '*/p_composer_echo_1_roi_STI_maths_maths_mnc.mnc'
-# source_file_name = 'STI'
+        datasource_atlas = Node(
+                interface=DataGrabber(
+                        sort_filelist=True
+                ),
+                name='datasource_atlas'
+        )
+        datasource_atlas.inputs.base_directory = os.path.abspath(atlas_dir)
+        datasource_atlas.inputs.template = atlas_pattern
 
-source_files_to_warp_dir = base_dir + '/derived/qsm_final_DeepQSM_2018-10-18-2208arci-UnetMadsResidual-batch40-fs4-cost_L2-drop_0.05_ep50-shapes_shape64_ex100_2018_10_18/'
-file_pattern_input = '*/deepQSM_maths_maths_mnc.mnc'
-source_file_name = 'DeepQSM'
+        resample = MapNode(
+                interface=Resample(
+                        sinc_interpolation=True
+                ),
+                name='resample_',
+                iterfield=['input_file', 'transformation']
+        )
+        wf.connect(datasource_source, 'outfiles', resample, 'input_file')
+        wf.connect(datasource_xfm, 'outfiles', resample, 'transformation')
+        wf.connect(datasource_atlas, 'outfiles', resample, 'like')
 
-output_dir = base_dir + '/derived/new_data_to_atlas_space/'
+        bigaverage = Node(
+                interface=BigAverage(
+                        output_float=True,
+                        robust=False
+                ),
+                name='bigaverage',
+                iterfield=['input_file']
+        )
 
+        wf.connect(resample, 'output_file', bigaverage, 'input_files')
 
-# shouldn't change
-stage_dir = source_volgenmodel_dir + 'xfmconcat_' + stage_id + '_/mapflow/'
-targetDir = source_volgenmodel_dir + 'voliso_' + stage_id + '_/'
-working_dir = '/gpfs1/scratch/30days/uqsbollm/temp'
-file_pattern_transform = '*/*_volcentre_norm__nlpfit_xfm_output.mnc_xfminvert_output.mnc_xfmconcat.xfm'
+        datasink = Node(
+                interface=DataSink(
+                        base_directory=out_dir,
+                        container=out_dir
+                ),
+                name='datasink'
+        )
 
-# </editor-fold>
+        wf.connect([(bigaverage, datasink, [('output_file', 'average')])])
+        wf.connect([(resample, datasink, [('output_file', 'atlas_space')])])
+        wf.connect([(datasource_xfm, datasink, [('outfiles', 'transforms')])])
+        
+        return wf
 
-# <editor-fold desc="Select files">
-wf = Workflow(name='new_data_to_atlas_space')
-wf.base_dir = opj(working_dir)
+if __name__ == "__main__":
+        parser = argparse.ArgumentParser()
 
-datasource_input = Node(interface=DataGrabber(sort_filelist=True), name='datasource_input')
-datasource_input.inputs.base_directory = os.path.abspath(source_files_to_warp_dir)
-datasource_input.inputs.template = file_pattern_input
+        parser.add_argument(
+                "--name",
+                type=str,
+                required=True
+        )
 
-datasource_transform = Node(interface=DataGrabber(sort_filelist=True), name='datasource_transform')
-datasource_transform.inputs.base_directory = os.path.abspath(stage_dir)
-datasource_transform.inputs.template = file_pattern_transform
+        parser.add_argument(
+                "--xfm_dir",
+                type=str,
+                required=True
+        )
 
-datasource_target = Node(interface=DataGrabber(sort_filelist=True), name='datasource_target')
-datasource_target.inputs.base_directory = os.path.abspath(targetDir)
-datasource_target.inputs.template = '*volcentre_norm_resample_bigaverage_reshape_vol_symm_norm_voliso.mnc'
-# </editor-fold>
+        parser.add_argument(
+                "--xfm_pattern",
+                type=str,
+                required=True
+        )
 
-# <editor-fold desc="Resample">
-resample = MapNode(interface=Resample(sinc_interpolation=True),
-                   name='resample_',
-                   iterfield=['input_file', 'transformation'])
+        parser.add_argument(
+                "--source_dir",
+                type=str,
+                required=True
+        )
 
-wf.connect(datasource_input, 'outfiles', resample, 'input_file')
-wf.connect(datasource_transform, 'outfiles', resample, 'transformation')
-wf.connect(datasource_target, 'outfiles', resample, 'like')
-# </editor-fold>
+        parser.add_argument(
+                "--source_pattern",
+                type=str,
+                required=True
+        )
 
-# <editor-fold desc="Bigaverage">
-bigaverage = Node(interface=BigAverage(output_float=True, robust=False),
-                  name='bigaverage',
-                  iterfield=['input_file'])
+        parser.add_argument(
+                "--atlas_dir",
+                type=str,
+                required=True
+        )
 
-wf.connect(resample, 'output_file', bigaverage, 'input_files')
-# </editor-fold>
+        parser.add_argument(
+                "--atlas_pattern",
+                type=str,
+                required=True
+        )
 
-# <editor-fold desc="Datasink">
-datasink = Node(DataSink(base_directory=output_dir, container=output_dir),
-                name='datasink')
+        parser.add_argument(
+                "--work_dir",
+                type=str,
+                required=True
+        )
 
-wf.connect([(bigaverage, datasink, [('output_file', source_file_name + '_average_' + stage_id)])])
-wf.connect([(resample, datasink, [('output_file', source_file_name + '_atlas_space_' + stage_id)])])
-wf.connect([(datasource_transform, datasink, [('outfiles', '_transforms_' + stage_id)])])
+        parser.add_argument(
+                "--out_dir",
+                type=str,
+                required=True
+        )
 
-# </editor-fold>
+        args = parser.parse_args()
 
-# <editor-fold desc="Run">
-wf.run('MultiProc', plugin_args={'n_procs': 9})
+        wf = create_workflow(
+                xfm_dir=args.xfm_dir,
+                xfm_pattern=args.xfm_pattern,
+                atlas_dir=args.atlas_dir,
+                atlas_pattern=args.atlas_pattern,
+                source_dir=args.source_dir,
+                source_pattern=args.source_pattern,
+                work_dir=args.work_dir,
+                out_dir=args.out_dir,
+                name=args.name
+        )
 
-# </editor-fold>
+        wf.run(
+                plugin='MultiProc',
+                plugin_args={
+                        'n_procs': int(
+                                os.environ["NCPUS"] if "NCPUS" in os.environ else os.cpu_count
+                        )
+                }
+        )
