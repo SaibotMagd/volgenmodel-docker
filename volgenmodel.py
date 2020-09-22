@@ -836,20 +836,20 @@ if __name__ == '__main__':
                         help='The workflow name')
     parser.add_argument('--run', type=str, default='MultiProc', choices=['MultiProc', 'PBSGraph'],
                         help='The execution plugin to use')
-    parser.add_argument('--ncpus', type=int, default=1,
-                        help='The amount of CPUs used in MultiProc mode')
+    #parser.add_argument('--ncpus', type=int, default=1,
+    #                    help='The amount of CPUs used in MultiProc mode')
     parser.add_argument('--input_dir', type=str, default='../fast-example',
                         help='The input directory')
-    parser.add_argument('--work_dir', type=str, default='.',
-                        help='The work directory (for temporary workflow files)')
-    parser.add_argument('--output_dir', type=str, default='.',
-                        help='The output directory (for final models)')
     parser.add_argument('--input_pattern', type=str, default='*mouse*.mnc',
                         help='The regular expression to find input files in the input directory')
     parser.add_argument('--input_pattern_run', type=str, default='*',
                         help='The list of runs to be used')
     parser.add_argument('--input_pattern_subject', type=str, default='*',
                         help='The list of subjects to be used')
+    parser.add_argument('--work_dir', type=str, default='.',
+                        help='The work directory (for temporary workflow files)')
+    parser.add_argument('--output_dir', type=str, default='.',
+                        help='The output directory (for final models)')
     parser.add_argument('--symmetric', type=bool, default=1, choices=[0, 1],
                         help='Symmetric averaging on? Will flip template at every level and repeat fit')
     parser.add_argument('--symmetric_dir', type=str, default='x', choices=['x', 'y', 'z'],
@@ -913,17 +913,25 @@ if __name__ == '__main__':
 
     wf = make_workflow(cli_args, options, configuration)
 
-    if cli_args.run == 'MultiProc':
-        wf.run(plugin='MultiProc', plugin_args={
-            'n_procs': cli_args.ncpus,
-            'memory_gb': 80,
-        }
-               )
+    os.makedirs(os.path.abspath(args.work_dir), exist_ok=True)
+    os.makedirs(os.path.abspath(args.output_dir), exist_ok=True)
 
+    if cli_args.run == 'MultiProc':
+        wf.run(
+            plugin='MultiProc',
+            plugin_args={
+                'n_procs': int(os.environ["NCPUS"]) if "NCPUS" in os.environ else int(os.cpu_count()), #cli_args.ncpus,
+                'memory_gb': 80,
+            }
+        )
     if cli_args.run == 'PBSGraph':
-        wf.run(plugin='PBSGraph', plugin_args={
-            'qsub_args': '-A UQ-CAI -l nodes=1:ppn=1,mem=1gb,vmem=1gb,walltime=00:10:00',
-            'max_jobs': '10',
-            'dont_resubmit_completed_jobs': True})
+        wf.run(
+            plugin='PBSGraph',
+            plugin_args={
+                'qsub_args': '-A UQ-CAI -l nodes=1:ppn=1,mem=1gb,vmem=1gb,walltime=00:10:00',
+                #'max_jobs': '10',
+                'dont_resubmit_completed_jobs': True
+            }
+        )
 
     print('done')
