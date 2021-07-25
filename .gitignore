@@ -35,3 +35,4 @@ nosetests.xml
 .project
 .pydevproject
 docker/volgenmodel-fast-example/*
+/.idea
