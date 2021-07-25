@@ -836,8 +836,8 @@ if __name__ == '__main__':
                         help='The workflow name')
     parser.add_argument('--run', type=str, default='MultiProc', choices=['MultiProc', 'PBSGraph'],
                         help='The execution plugin to use')
-    #parser.add_argument('--ncpus', type=int, default=1,
-    #                    help='The amount of CPUs used in MultiProc mode')
+    parser.add_argument('--ncpus', type=int, default=1,
+                        help='The amount of CPUs used in MultiProc mode')
     parser.add_argument('--input_dir', type=str, default='../fast-example',
                         help='The input directory')
     parser.add_argument('--input_pattern', type=str, default='*mouse*.mnc',
