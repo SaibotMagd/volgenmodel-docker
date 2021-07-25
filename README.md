@@ -1,5 +1,58 @@
+
 # volgenmodel-nipype
+
+This is the original development repo from 2014.
+
+Official repository: [https://github.com/NIF-au/volgenmodel-nipype](https://github.com/NIF-au/volgenmodel-nipype)
+
+Active fork at CAI-UQ: [https://github.com/CAIsr/volgenmodel-nipype](https://github.com/CAIsr/volgenmodel-nipype)
+
 volgenmodel-nipype is the port of [volgenmodel](https://github.com/andrewjanke/volgenmodel) to [Nipype](https://github.com/nipy/nipype). It creates nonlinear models from a series of input MINC files.
+
+## Quickstart on Ubuntu 20 with MINC Toolkit 1.9.18-20200813
+
+### Ubuntu packages
+
+```bash
+sudo apt-get install git octave python3-pip imagemagick
+```
+
+### minc-toolkit
+
+From [https://bic-mni.github.io/#installing](https://bic-mni.github.io/#installing):
+
+```bash
+wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-1.9.18-20200813-Ubuntu_20.04-x86_64.deb
+sudo dpkg -i minc-toolkit-1.9.18-20200813-Ubuntu_20.04-x86_64.deb
+```
+
+### nipype
+
+```bash
+pip install nipype
+```
+
+### Run the fast example
+
+```bash
+git clone https://github.com/carlohamalainen/volgenmodel-nipype
+git clone https://github.com/carlohamalainen/volgenmodel-fast-example.git
+
+cd volgenmodel-nipype
+export PYTHONPATH=`pwd`
+export PATH=$PATH:`pwd`/extra-scripts:/opt/minc/1.9.18/bin
+export PERL5LIB=/opt/minc/1.9.18/perl
+
+python3 volgenmodel.py --run=MultiProc --ncpus=2 --fit_stages=lin,1,3 --input_dir=../volgenmodel-fast-example
+```
+
+Check the output:
+
+```bash
+$ find workflow_output_workflowMultiProc2/ -type f
+workflow_output_workflowMultiProc2/stdev/mouse00_volcentre_norm_resample_bigaverage_stdev_vol_symm.mnc
+workflow_output_workflowMultiProc2/model/mouse00_volcentre_norm_resample_bigaverage_reshape_vol_symm.mnc
+```
 
 ## Install for Windows Subsystem for Linux or Ubuntu 16.04
 Install minc: https://bic-mni.github.io
