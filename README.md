@@ -21,7 +21,7 @@ This repository introduces compatibility with the more widely used **NIfTI (.nii
 A standout feature of this repository is its ability to **run the pipeline in a full-permutation mode**. This means:
 - Any combination of base files can be used to generate templates.
 - For instance, if you provide files `00`, `01`, and `02`, the pipeline will:
-  - Create templates for combinations such as `00-01`, `01-02`, and `00-01-02`.
+  - Create templates for combinations such as `00-01`, `01-02`, `00-02`, and `00-01-02`.
   - Note: The **order of the files does not matter** in these permutations.
 
 ### 4. **Integrated Jupyter Notebook**
@@ -67,6 +67,11 @@ docker run -it <dockerhub-username>/volgenmodel-pipeline
   - Generate templates with the Volgenmodel-Nipype pipeline.
   - Convert the resulting templates back to the NIfTI format.
 
+### Input File Requirements
+- **File Naming Convention**: All source files must follow the naming pattern: `mouseXX.nii` (e.g., `mouse01.nii`, `mouse02.nii`).
+- **File Format**: Source files must be in **NIfTI (.nii)** format.
+- **File Location**: Place all source files in the directory `/data/masked_brains` before running the pipeline.
+
 ### CPU Usage Configuration
 - You can customize the number of CPUs used during processing with the `ncpus` parameter. However, be cautious:
   - **Excessive CPU allocation** may overload your system, potentially causing it to crash.
@@ -81,6 +86,7 @@ This project is a **lifeline** for researchers and users who want to:
 - Harness the power of Docker for a consistent and portable environment.
 
 Feel free to clone the repository, explore the code, and contribute to its growth. Your feedback and collaboration are always welcome! 🚀
+
 //////////////////////////////////////////////////////////////////////////////
 // README from OG repo as backup copy
 # volgenmodel-nipype
