@@ -1,6 +1,6 @@
 # Project: Reviving an Old Pipeline with Docker Integration
 
-Welcome to this repository! This project is designed to **rescue and modernize an old pipeline** by creating a robust and versatile Docker container. The container is built upon a foundation of **Ubuntu 20.04**, **MINC ToolBox 1.9**, and the **Volgenmodel-Nipype pipeline**. With this repository, you can breathe new life into pipelines that may no longer have access to their original software environment.
+The purpose of this project is to **rescue and modernize an old pipeline** by creating a robust and versatile Docker container. The container is built upon a foundation of **Ubuntu 20.04**, **MINC ToolBox 1.9**, and the **Volgenmodel-Nipype pipeline**. With this repository, you can breathe new life into pipelines that may no longer have access to their original software environment.
 
 ---
 
@@ -24,7 +24,13 @@ A standout feature of this repository is its ability to **run the pipeline in a 
   - Create templates for combinations such as `00-01`, `01-02`, and `00-01-02`.
   - Note: The **order of the files does not matter** in these permutations.
 
-### 4. **Workflow Automation**
+### 4. **Integrated Jupyter Notebook**
+The container is designed to start a **Jupyter Notebook server**, allowing an intuitive and interactive environment for managing the pipeline:
+- Simply open your browser and navigate to `localhost:8888` to access the server.
+- The main code for creating templates, performing file conversions, and generating permutations is located in the `create_template_from_mnc.ipynb` file.
+- There's **nothing else to install**—everything you need is preinstalled in the Docker container.
+
+### 5. **Workflow Automation**
 The pipeline includes source code to:
 1. **Convert NIfTI files to MINC format.**
 2. Build all possible **permutations** of input base files.
@@ -53,10 +59,18 @@ docker run -it <dockerhub-username>/volgenmodel-pipeline
 
 ## Important Notes
 
+### Accessing the Jupyter Notebook
+- Once the container is running, a **Jupyter Notebook server** will be available at `localhost:8888`.
+- Use this interface to execute the notebook file `create_template_from_mnc.ipynb`. This file provides the code to:
+  - Convert NIfTI files to MINC format.
+  - Perform full permutations of input files.
+  - Generate templates with the Volgenmodel-Nipype pipeline.
+  - Convert the resulting templates back to the NIfTI format.
+
 ### CPU Usage Configuration
 - You can customize the number of CPUs used during processing with the `ncpus` parameter. However, be cautious:
   - **Excessive CPU allocation** may overload your system, potentially causing it to crash.
-  - A **safe and recommended estimate** is to set `ncpus` to the number of **physical cores** on your machine. For instance, if your computer has 8 cores, set `ncpus=8` for optimal performance.
+  - A **safe and recommended estimate** is to set `ncpus` to the number of **physical cores** on your machine. For example, if your computer has 8 cores, set `ncpus=8` for optimal performance.
 
 ---
 
@@ -67,8 +81,6 @@ This project is a **lifeline** for researchers and users who want to:
 - Harness the power of Docker for a consistent and portable environment.
 
 Feel free to clone the repository, explore the code, and contribute to its growth. Your feedback and collaboration are always welcome! 🚀
-
-
 //////////////////////////////////////////////////////////////////////////////
 // README from OG repo as backup copy
 # volgenmodel-nipype
