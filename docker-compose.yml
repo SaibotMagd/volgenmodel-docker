@@ -1,0 +1,8 @@
+services:
+  jupyter-notebook:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./data:/opt/conda/bin/data
+

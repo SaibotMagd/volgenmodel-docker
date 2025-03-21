@@ -36,3 +36,4 @@ nosetests.xml
 .pydevproject
 docker/volgenmodel-fast-example/*
 /.idea
+/data/.ipynb_checkpoints
