@@ -24,26 +24,25 @@ RUN curl -sSL -k https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86
 # Add Miniconda to PATH
 ENV PATH="/opt/conda/bin:${PATH}"
 
-RUN conda config --set ssl_verify False
-
-# Create a new Conda environment with Python 3.8 and Jupyter Notebook
-RUN conda create -y --name myenv python=3.8 && \
+# Configure Conda
+RUN conda config --set ssl_verify False && \
+    conda update -y conda && \
     conda clean --all
 
-# Activate the Conda environment
-SHELL ["conda", "run", "-n", "myenv", "/bin/bash", "-c"]
+# Create a new Conda environment and install dependencies
+RUN conda create -y --name myenv python=3.8 jupyter simpleitk -c simpleitk && \
+    echo "source activate myenv" >> ~/.bashrc
 
-# Install Jupyter Notebook in the Conda environment
-RUN conda install -y jupyter
+# Use Miniconda's activation method directly instead of `source ~/.bashrc`
+SHELL ["/bin/bash", "-c"]
 
 # Install the Minc toolkit
 RUN wget --no-check-certificate -q http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-1.9.18-20200813-Ubuntu_20.04-x86_64.deb && \
     dpkg -i minc-toolkit-1.9.18-20200813-Ubuntu_20.04-x86_64.deb && \
     rm minc-toolkit-1.9.18-20200813-Ubuntu_20.04-x86_64.deb
 
-# Install nipype using pip
-RUN pip install nipype
-RUN pip install h5py
+# Install nipype and other necessary Python packages
+RUN conda run -n myenv pip install nipype h5py tifffile
 
 # Clone the required Git repositories
 RUN git -c http.sslVerify=false clone https://github.com/carlohamalainen/volgenmodel-nipype.git && \
@@ -51,7 +50,7 @@ RUN git -c http.sslVerify=false clone https://github.com/carlohamalainen/volgenm
 
 # Set environment variables
 ENV PYTHONPATH=/volgenmodel-nipype
-ENV PATH=$PATH:/volgenmodel-nipype/extra-scripts:/opt/minc/1.9.18/bin
+ENV PATH="${PATH}:/volgenmodel-nipype/extra-scripts:/opt/minc/1.9.18/bin"
 ENV PERL5LIB=/opt/minc/1.9.18/perl
 
 # Expose the port for Jupyter Notebook
@@ -59,5 +58,4 @@ EXPOSE 8888
 
 # Start Jupyter Notebook when the container launches
 CMD ["conda", "run", "-n", "myenv", "jupyter", "notebook", "--ip=0.0.0.0", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''"]
-
 
