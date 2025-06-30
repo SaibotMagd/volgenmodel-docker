@@ -41,3 +41,4 @@ data/converted_brains/*
 data/masked_brains/*
 data/output_templates/*
 data/tmp/*
+data/test

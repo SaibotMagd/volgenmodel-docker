@@ -42,7 +42,7 @@ RUN wget --no-check-certificate -q http://packages.bic.mni.mcgill.ca/minc-toolki
     rm minc-toolkit-1.9.18-20200813-Ubuntu_20.04-x86_64.deb
 
 # Install nipype and other necessary Python packages
-RUN conda run -n myenv pip install nipype h5py tifffile
+RUN conda run -n myenv pip install nipype h5py tifffile tqdm
 
 # Clone the required Git repositories
 RUN git -c http.sslVerify=false clone https://github.com/carlohamalainen/volgenmodel-nipype.git && \

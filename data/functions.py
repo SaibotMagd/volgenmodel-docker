@@ -22,7 +22,7 @@ def fileList(folder):
     fileListing.sort()
     return fileListing
 
-def create_N4_img(inputImagePath, outputPath):
+def create_N4_img(inputImagePath, outputImagePath):
     """
     Perform N4 bias correction on an image and save the corrected image.
 
@@ -40,8 +40,8 @@ def create_N4_img(inputImagePath, outputPath):
     inputImage = sitk.Cast(inputImage, sitk.sitkFloat32)
     corrector = sitk.N4BiasFieldCorrectionImageFilter()
     output = corrector.Execute(inputImage, maskImage)
-    sitk.WriteImage(output, outputPath)
-    print("Finished N4 Bias Field Correction.....")
+    sitk.WriteImage(output, outputImagePath)
+    print(f"Finished N4 Bias Field Correction to {outputImagePath}")
 
 def get_threshold(image_array):
     """
@@ -74,7 +74,7 @@ def get_threshold(image_array):
 
     return None  # Return None if the condition isn't met
 
-def create_cropped_imgs(input_folder, output_folder, thresholds='auto', save_as_dtype=np.int16):
+def create_cropped_imgs(inputImagePath, outputImagePath, threshold='auto', save_as_dtype=np.int16):
     """
     Create cropped images from input images based on specified or automatically determined thresholds.
 
@@ -82,91 +82,94 @@ def create_cropped_imgs(input_folder, output_folder, thresholds='auto', save_as_
     the region of interest, crops the image accordingly, and saves the cropped image to the output folder.
 
     Parameters:
-    input_folder (str): Path to the folder containing input images.
-    output_folder (str): Path to the folder where cropped images will be saved.
-    thresholds (list or str): Threshold values for each image. If 'auto', thresholds are determined automatically.
-    save_as_dtype (data-type): Data type to save the cropped images as.
+    inputImagePath (str): path to a skull stripped image file in nii format
+    outputImagePath (str): Path to the folder where cropped image will be saved.
+    threshold (str): Threshold value for the skull stripped image. If 'auto', threshold will determined automatically.
+    save_as_dtype (data-type): Data type to save the cropped image as.
 
     Returns:
     int: 0 if successful, 1 if an error occurs.
     """
-    for k, imageFile in enumerate(fileList(input_folder)):
-        print(f"Processing image: {imageFile}")
 
-        img = nib.load(join(input_folder, imageFile))
-        img = img.get_fdata(dtype=np.float32)
-        print(f"Initial Dims: {img.shape}")
-        img = np.squeeze(img)
-        threshold = thresholds[k]
+    print(f"Processing image: {inputImagePath}")
 
-        if thresholds != 'auto':
-            try:
-                threshold = thresholds[k]
-            except:
-                print(f"No threshold defined for this image: {imageFile}")
-                return 1
-        else:
-            threshold = get_threshold(img)
-            print(f"The auto-created threshold == {threshold}")
-            if threshold is None:
-                print("I tried to get a threshold automatically but it failed, because not at least 20% of all values in the image are zeros.")
-                return 1
+    img = nib.load(inputImagePath)
+    #img = img.get_fdata(dtype=np.float32)
+    img = img.get_fdata()
+    print(f"Initial Dims: {img.shape}")
+    img = np.squeeze(img)
+    print(np.mean(img))
+    if np.mean(img) < 1:
+        img = img * 1000
 
-        zLen = img.shape[0]
-        bestBorders = [int(img.shape[1]/2)-1, int(img.shape[1]/2)+1,
-                     int(img.shape[2]/2)-1, int(img.shape[2]/2)+1]
+    if threshold != 'auto':
+        try:
+            print(f"current threshold is {threshold}")
+        except:
+            print(f"No threshold defined for this image: {inputImagePath}")
+            return 1
+    else:
+        threshold = get_threshold(img)
+        print(f"The auto-created threshold == {threshold}")
+        if threshold is None:
+            print("I tried to get a threshold automatically but it failed, because not at least 20% of all values in the image are zeros.")
+            return 1
 
-        print(f"Initial bestBorders: {bestBorders}")
+    zLen = img.shape[0]
+    bestBorders = [int(img.shape[1]/2)-1, int(img.shape[1]/2)+1,
+                 int(img.shape[2]/2)-1, int(img.shape[2]/2)+1]
 
-        for i in range(np.size(img, axis=0)):
-            image_data = img[i]
-            if np.max(image_data) <= threshold:
-                zLen -= 1
-                continue
+    print(f"Initial bestBorders: {bestBorders}")
 
-            non_empty_columns = np.where(np.max(image_data, axis=0) > threshold)[0]
-            non_empty_rows = np.where(np.max(image_data, axis=1) > threshold)[0]
-            cropBox = [min(non_empty_rows), max(non_empty_rows), min(non_empty_columns), max(non_empty_columns)]
-
-            if i == 0:
-                bestBorders = cropBox
-            else:
-                for pos, cropCheck in enumerate(cropBox):
-                    if (pos == 0 or pos == 2) and bestBorders[pos] > cropCheck:
-                        bestBorders[pos] = cropCheck
-                    if (pos == 1 or pos == 3) and bestBorders[pos] < cropCheck:
-                        bestBorders[pos] = cropCheck
-
-        print(f"Final bestBorders: {bestBorders}")
-
-        # Check if bestBorders are valid
-        if bestBorders[0] >= bestBorders[1] or bestBorders[2] >= bestBorders[3]:
-            print("Invalid crop borders detected. Skipping this image.")
+    for i in range(np.size(img, axis=0)):
+        image_data = img[i]
+        if np.max(image_data) <= threshold:
+            zLen -= 1
             continue
 
-        image_data_new = image_data[bestBorders[0]:bestBorders[1]+1, bestBorders[2]:bestBorders[3]+1]
-        finalImage = np.zeros((zLen, image_data_new.shape[0], image_data_new.shape[1]), dtype=save_as_dtype)
-        iCount = 0
+        non_empty_columns = np.where(np.max(image_data, axis=0) > threshold)[0]
+        non_empty_rows = np.where(np.max(image_data, axis=1) > threshold)[0]
+        cropBox = [min(non_empty_rows), max(non_empty_rows), min(non_empty_columns), max(non_empty_columns)]
 
-        print(f"Number of slices after: {np.size(finalImage, axis=0)}")
-        print(f"Final Dims: {finalImage.shape}")
+        if i == 0:
+            bestBorders = cropBox
+        else:
+            for pos, cropCheck in enumerate(cropBox):
+                if (pos == 0 or pos == 2) and bestBorders[pos] > cropCheck:
+                    bestBorders[pos] = cropCheck
+                if (pos == 1 or pos == 3) and bestBorders[pos] < cropCheck:
+                    bestBorders[pos] = cropCheck
 
-        for i in range(np.size(img, axis=0)):
-            image_data = img[i]
-            if np.max(image_data) <= threshold:
-                continue
-            finalImage[iCount] = image_data[bestBorders[0]:bestBorders[1]+1, bestBorders[2]:bestBorders[3]+1]
-            iCount += 1
-            if iCount == zLen:
-                break
+    print(f"Final bestBorders: {bestBorders}")
 
-        finalImage = nib.Nifti1Image(finalImage, np.eye(4))
-        nib.save(finalImage, join(output_folder, imageFile[:-4] + "_auto-crop.nii"))
-        print(f"I saved to {join(output_folder, imageFile[:-4] + '_auto-crop.nii')}")
+    # Check if bestBorders are valid
+    if bestBorders[0] >= bestBorders[1] or bestBorders[2] >= bestBorders[3]:
+        print("Invalid crop borders detected. Skipping this image.")
+        return 1
+
+    image_data_new = image_data[bestBorders[0]:bestBorders[1]+1, bestBorders[2]:bestBorders[3]+1]
+    finalImage = np.zeros((zLen, image_data_new.shape[0], image_data_new.shape[1]), dtype=save_as_dtype)
+    iCount = 0
+
+    print(f"Number of slices after: {np.size(finalImage, axis=0)}")
+    print(f"Final Dims: {finalImage.shape}")
+
+    for i in range(np.size(img, axis=0)):
+        image_data = img[i]
+        if np.max(image_data) <= threshold:
+            continue
+        finalImage[iCount] = image_data[bestBorders[0]:bestBorders[1]+1, bestBorders[2]:bestBorders[3]+1]
+        iCount += 1
+        if iCount == zLen:
+            break
+
+    finalImage = nib.Nifti1Image(finalImage, np.eye(4))
+    nib.save(finalImage, outputImagePath)
+    print(f"I saved to {outputImagePath}")
 
     return 0
 
-def create_padding_imgs(input_folder, init_paddingSize='10%'):
+def create_padding_imgs(inputImagePath, outputImagePath, init_paddingSize='10%'):
     """
     Create padded images by adding padding around the input images.
 
@@ -174,26 +177,25 @@ def create_padding_imgs(input_folder, init_paddingSize='10%'):
     and saves the padded image back to the input folder.
 
     Parameters:
-    input_folder (str): Path to the folder containing input images.
+    inputImagePath (str): imput path for the preprocessed mri image file.
+    outputImagePath (str): target path for the preprocessed mri image file.
     init_paddingSize (int or str): Size of the padding. If '10%', padding is 10% of the maximum image dimension.
     """
-    imageFiles = fileList(input_folder)
-    for imageFile in imageFiles:
-        print(imageFile)
-        img = nib.load(join(input_folder, imageFile))
-        img = img.get_fdata(dtype=np.float32)
-        img = np.squeeze(img)
-        if init_paddingSize == '10%':
-            paddingSize = int(max(img.shape)*0.1) + 1
-        else:
-            paddingSize = init_paddingSize
-        img = np.pad(img, ((paddingSize,paddingSize),
-                          (paddingSize,paddingSize),
-                          (paddingSize,paddingSize)),
-                    'constant') #z-y-x
-        img = nib.Nifti1Image(img, np.eye(4))
-        nib.save(img, join(input_folder, imageFile[:-4] + "_padded.nii"))
-        print(f"I padded file: {imageFile} size of {paddingSize} in all 3D!")
+    print(inputImagePath)
+    img = nib.load(inputImagePath)
+    img = img.get_fdata(dtype=np.float32)
+    img = np.squeeze(img)
+    if init_paddingSize == '10%':
+        paddingSize = int(max(img.shape)*0.1) + 1
+    else:
+        paddingSize = init_paddingSize
+    img = np.pad(img, ((paddingSize,paddingSize),
+                      (paddingSize,paddingSize),
+                      (paddingSize,paddingSize)),
+                'constant') #z-y-x
+    img = nib.Nifti1Image(img, np.eye(4))
+    nib.save(img, outputImagePath)
+    print(f"I padded file: {outputImagePath} size of {paddingSize} in all 3D!")
 
 def nii_to_minc(inputFolder, outputFolder, only_preprocessed=1):
     """
@@ -214,7 +216,7 @@ def nii_to_minc(inputFolder, outputFolder, only_preprocessed=1):
     main_files = fileList(main_path)
 
     if only_preprocessed:
-        main_files = [x for x in main_files if x.find("N4") != -1 and x.find("padded") != -1 and x.find("auto-crop") != -1]
+        main_files = [x for x in main_files if x.find("_N4_auto-crop_padded.") != -1]
 
     for i, file in enumerate(main_files):
         n1_img = nib.load(join(main_path, file))
@@ -281,14 +283,19 @@ def process_files(process_folder, output_folder, tmp_folder, create_parameters={
     Returns:
     int: 0 if successful.
     """
+
+    
     # Get all .mnc files in the folder
     files = [f for f in os.listdir(process_folder) if f.endswith('.mnc')]
+    ## make sure that the template contains of every brain image given if no parameters set
+    if type(create_parameters['min_number_of_brains_in_template']) != int: 
+        create_parameters['min_number_of_brains_in_template'] = len(files)
 
     # Sort files to ensure order consistency
     files.sort()
 
     # Iterate over all combination sizes (from 2 to len(files))
-    for r in range(2, len(files) + 1):
+    for r in range(create_parameters['min_number_of_brains_in_template'], len(files) + 1):
         for combo in combinations(files, r):
             # Create the output file name
             file_ids = [f.replace("mouse_", "").replace(".mnc", "") for f in combo]
