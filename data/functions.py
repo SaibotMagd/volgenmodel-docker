@@ -234,11 +234,11 @@ def nii_to_minc(inputFolder, outputFolder, only_preprocessed=1):
                 '-unsigned',
                 '-float',
                 '-clobber',
-                os.path.join(out_folder, file[:-4]),
+                os.path.join(out_folder, file[:-4] + ".nii"),
                 os.path.join(out_folder, file[:-4] + ".mnc")])
             print(cmd)
             os.system(cmd)
-
+    """
     ## Refresh MINC header; step only necessary to prevent bugs in volgen-pipeline
     mainFiles = fileList(out_folder)
     for file in mainFiles:
@@ -252,7 +252,8 @@ def nii_to_minc(inputFolder, outputFolder, only_preprocessed=1):
                     os.path.join(*[out_folder, file])
                    )
             print(f"{file} -> reworked_mouse_{file}")
-
+    """
+    
 def delete_files(folder, not_ending):
     """
     Delete files in a folder that do not end with a specified extension.
@@ -288,7 +289,7 @@ def process_files(process_folder, output_folder, tmp_folder, create_parameters={
     # Get all .mnc files in the folder
     files = [f for f in os.listdir(process_folder) if f.endswith('.mnc')]
     ## make sure that the template contains of every brain image given if no parameters set
-    if type(create_parameters['min_number_of_brains_in_template']) != int: 
+    if not isinstance(create_parameters['min_number_of_brains_in_template'], int) or create_parameters['min_number_of_brains_in_template'] > len(files):
         create_parameters['min_number_of_brains_in_template'] = len(files)
 
     # Sort files to ensure order consistency
