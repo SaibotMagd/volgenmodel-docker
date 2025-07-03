@@ -307,7 +307,7 @@ def process_files(process_folder, output_folder, tmp_folder, create_parameters={
             create_template(combo_filelist, tmp_folder, create_parameters)
             # Convert the template created for this combination
             convert_and_copy_mnc2nii(result_folder, outputfile)
-            print(os.system(f"ls {output_folder}"))
+            #print(os.system(f"ls {output_folder}"))
     return 0
 
 def create_template(filelist, tmp_folder, create_parameters, result_folder='/volgenmodel-nipype'):
